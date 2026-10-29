@@ -13,7 +13,7 @@ type VoiceWindow = Window & { SpeechRecognition?: new () => Recognition; webkitS
 const NICK = "Mango00";
 const copy: Record<Mode, { title: string; empty: string; hint: string; placeholder: string }> = {
   companion: { title: "Dessert", empty: `Hi ${NICK}, I'm here.`, hint: "Tell me about your day — the big things or the tiny ones.", placeholder: `Talk to Dessert…` },
-  mentor: { title: "Medical Mentor", empty: `Ready when you are, ${NICK}.`, hint: "Share a case, ask for a review, or quiz yourself.", placeholder: "Describe a case or ask a question…" },
+  mentor: { title: "Medical Mentor", empty: `Ready when you are, ${NICK}.`, hint: "Share a case, ask for a review, or quiz yourself.", placeholder: "Ask a question…" },
 };
 
 export function ChatScreen({ mode }: { mode: Mode }) {

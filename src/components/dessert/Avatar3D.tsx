@@ -86,7 +86,7 @@ export function Avatar3D({ emotion = "neutral", size = 280 }: { emotion?: Emotio
         const delta = (now - previous) / 1000; previous = now;
         const t = (performance.now() - t0) / 1000;
         const p = target.current;
-        if (motion.matches && el.dataset.sceneReady && Object.keys(p).every((k) => Math.abs(cur[k as keyof AvatarPose] - p[k as keyof AvatarPose]) < 0.001)) return;
+        if (motion.matches && el.dataset["sceneReady"] && Object.keys(p).every((k) => Math.abs(cur[k as keyof AvatarPose] - p[k as keyof AvatarPose]) < 0.001)) return;
         cur = motion.matches ? { ...p } : easePose(cur, p, delta);
         const idle = motion.matches ? 0 : 1;
         root.position.y = idle * Math.sin(t * (1.4 + cur.open)) * cur.float;
@@ -107,7 +107,7 @@ export function Avatar3D({ emotion = "neutral", size = 280 }: { emotion?: Emotio
         openMouth.visible = cur.open > 0.01;
         cheeks.forEach((c) => ((c.material as InstanceType<typeof T.MeshBasicMaterial>).opacity = cur.blush * 0.6));
         renderer.render(scene, cam);
-        el.dataset.sceneReady = "true";
+        el.dataset["sceneReady"] = "true";
       };
       loop();
       cleanup = () => {
@@ -118,7 +118,7 @@ export function Avatar3D({ emotion = "neutral", size = 280 }: { emotion?: Emotio
         });
         materials.forEach((m) => m.dispose()); renderer.dispose(); renderer.domElement.remove();
       };
-    }).catch(() => { if (mount.current) mount.current.dataset.sceneError = "true"; });
+    }).catch(() => { if (mount.current) mount.current.dataset["sceneError"] = "true"; });
     return () => { disposed = true; cleanup(); };
   }, [size]);
 
