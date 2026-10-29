@@ -8,3 +8,9 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Dessert architecture
+- Keep avatar poses and companion state priority in browser-safe pure TypeScript (`dessert-state`) so behavior can be tested independently of WebGL.
+- Preserve the browser-only dynamic Three.js import and existing local Express API boundary; no server rendering or cloud dependency is needed for the avatar.
+- Avatar color roles live in global CSS tokens; dispose scene resources on unmount and respect reduced-motion settings inside the render loop.
+- The canvas mount sets `data-scene-ready` after its first frame for browser verification; no public mood override or fabricated AI analysis is exposed.

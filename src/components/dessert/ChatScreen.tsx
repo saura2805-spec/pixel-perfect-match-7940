@@ -3,11 +3,17 @@ import { Link } from "@tanstack/react-router";
 import { Avatar3D as Avatar } from "./Avatar3D";
 import { sendChat, type ChatMessage, type Emotion, type Mode } from "@/lib/dessert-api";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ArrowUp, Mic, Square } from "lucide-react";
+import { companionEmotion } from "@/lib/dessert-state";
+
+type Recognition = { interimResults: boolean; lang: string; onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void; abort: () => void };
+type VoiceWindow = Window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
 
 const NICK = "Mango00";
 const copy: Record<Mode, { title: string; empty: string; hint: string; placeholder: string }> = {
   companion: { title: "Dessert", empty: `Hi ${NICK}, I'm here.`, hint: "Tell me about your day — the big things or the tiny ones.", placeholder: `Talk to Dessert…` },
-  mentor: { title: "Medical Mentor", empty: `Ready when you are, ${NICK}.`, hint: "Share a case, ask for a review, or quiz yourself.", placeholder: "Describe a case or ask a question…" },
+  mentor: { title: "Medical Mentor", empty: `Ready when you are, ${NICK}.`, hint: "Share a case, ask for a review, or quiz yourself.", placeholder: "Ask a question…" },
 };
 
 export function ChatScreen({ mode }: { mode: Mode }) {
@@ -17,19 +23,32 @@ export function ChatScreen({ mode }: { mode: Mode }) {
   const [error, setError] = useState<string | null>(null);
   const [emotion, setEmotion] = useState<Emotion>("neutral");
   const [listening, setListening] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
-  const recRef = useRef<any>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const recRef = useRef<Recognition | null>(null);
   const [voiceOk, setVoiceOk] = useState(false);
   const c = copy[mode];
 
-  useEffect(() => { setVoiceOk(typeof window !== "undefined" && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)); }, []);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+  useEffect(() => {
+    const voiceWindow = window as VoiceWindow;
+    setVoiceOk(Boolean(voiceWindow.SpeechRecognition || voiceWindow.webkitSpeechRecognition));
+    return () => { const r = recRef.current; if (r) { r.onresult = null; r.onend = null; r.onerror = null; r.abort(); } };
+  }, []);
+  useEffect(() => {
+    const thread = threadRef.current;
+    thread?.scrollTo({ top: thread.scrollHeight, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  }, [messages, loading]);
+  useEffect(() => {
+    const el = composerRef.current;
+    if (el) { el.style.height = "auto"; el.style.height = `${Math.min(el.scrollHeight, 144)}px`; }
+  }, [input]);
 
-  const displayEmotion: Emotion = listening ? "listening" : loading ? "thinking" : input ? "listening" : emotion;
+  const displayEmotion = companionEmotion(input, listening, loading, emotion);
 
   async function send() {
     const text = input.trim();
     if (!text || loading) return;
+    recRef.current?.stop(); setListening(false);
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: text };
     const next = [...messages, userMsg];
     setMessages(next); setInput(""); setLoading(true); setError(null);
@@ -38,78 +57,84 @@ export function ChatScreen({ mode }: { mode: Mode }) {
       setMessages([...next, { id: crypto.randomUUID(), role: "assistant", content: reply, emotion: e }]);
       setEmotion(e ?? "neutral");
     } catch {
-      setError("I can't reach my local brain right now. Is the backend and Ollama running?");
+      setError("I can’t reach the local AI right now. Check that Express and Ollama are running, then try again.");
       setEmotion("sad");
     } finally { setLoading(false); }
   }
 
   function toggleVoice() {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const voiceWindow = window as VoiceWindow;
+    const SR = voiceWindow.SpeechRecognition || voiceWindow.webkitSpeechRecognition;
     if (!SR) return;
     if (listening) { recRef.current?.stop(); return; }
     const r = new SR(); r.interimResults = true; r.lang = "en-US";
-    r.onresult = (e: any) => setInput(Array.from(e.results).map((x: any) => x[0].transcript).join(""));
+    r.onresult = (e) => setInput(Array.from(e.results).map((x) => x[0]?.transcript ?? "").join(" "));
     r.onend = () => setListening(false);
-    recRef.current = r; r.start(); setListening(true);
+    r.onerror = () => { setListening(false); setError("Voice input isn’t available right now. You can still type your message."); };
+    recRef.current = r;
+    try { r.start(); setListening(true); setError(null); } catch { setListening(false); setError("Microphone access isn’t available. You can still type your message."); }
   }
 
   return (
-    <div className="mx-auto grid min-h-screen max-w-7xl gap-6 p-4 md:p-6 lg:grid-cols-[360px_1fr]">
-      <aside className="glass flex flex-col items-center rounded-3xl p-6 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)]">
-        <nav className="flex w-full gap-1 rounded-full bg-muted/60 p-1 text-sm" aria-label="Modes">
+    <div className="dessert-layout mx-auto grid max-w-7xl gap-3 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-6 lg:p-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+      <aside className="dessert-profile glass flex min-w-0 flex-col items-center rounded-3xl p-3 sm:p-4 lg:p-6">
+        <nav className="grid w-full grid-cols-2 gap-1 rounded-full bg-muted/60 p-1 text-sm" aria-label="Modes">
           {([["/", "Companion"], ["/mentor", "Medical Mentor"]] as const).map(([to, label]) => (
-            <Link key={to} to={to} className="flex-1 rounded-full px-3 py-2 text-center text-muted-foreground transition-colors hover:text-foreground"
+             <Link key={to} to={to} className="min-w-0 rounded-full px-2 py-2 text-center text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm"
               activeProps={{ className: "bg-primary text-primary-foreground hover:text-primary-foreground glow" }} activeOptions={{ exact: true }}>{label}</Link>
           ))}
         </nav>
-        <div className="flex flex-1 flex-col items-center justify-center py-6">
+        <div className="dessert-identity grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center justify-center gap-2 lg:flex lg:flex-1 lg:flex-col lg:gap-0 lg:py-6">
           <Avatar emotion={displayEmotion} size={260} />
-          <h1 className="mt-4 font-display text-4xl italic">Dessert</h1>
-          <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-            <span className={cn("h-2 w-2 rounded-full", error ? "bg-destructive" : "bg-online animate-halo")} />
-            {error ? "Offline" : loading ? "Thinking…" : "Here with you"}
+          <div className="min-w-0 lg:text-center">
+            <h1 className="font-display text-3xl italic lg:mt-4 lg:text-4xl">Dessert</h1>
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground sm:text-sm lg:justify-center">
+              <span className={cn("h-2 w-2 shrink-0 rounded-full", error ? "bg-destructive" : "bg-online")} />
+              {error ? "Connection unavailable" : loading ? "Thinking…" : listening ? "Listening…" : "Here with you"}
+            </div>
+            <span className="mt-3 inline-block rounded-full border border-primary/30 px-3 py-1 text-[10px] uppercase tracking-widest text-primary">{displayEmotion}</span>
           </div>
-          <span className="mt-3 rounded-full border border-primary/30 px-3 py-1 text-xs uppercase tracking-widest text-primary transition-all">{displayEmotion}</span>
         </div>
-        <p className="text-center text-xs text-muted-foreground">Running locally · private to you</p>
+        <p className="hidden text-center text-xs text-muted-foreground lg:block">Local AI · just you and Dessert</p>
       </aside>
 
-      <section className="glass flex min-h-[70vh] flex-col rounded-3xl lg:h-[calc(100vh-3rem)]">
-        <header className="border-b px-6 py-4">
+      <section className="dessert-conversation glass flex min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl">
+        <header className="shrink-0 border-b px-4 py-3 sm:px-6 sm:py-4">
           <h2 className="font-display text-xl">{c.title}</h2>
           <p className="text-xs text-muted-foreground">{mode === "companion" ? `Chatting with ${NICK}` : "Cases · reviews · memory"}</p>
         </header>
-        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-6" aria-live="polite">
+        <div ref={threadRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6" role="log" aria-label="Conversation" aria-live="polite">
           {messages.length === 0 && !loading && (
             <div className="flex h-full flex-col items-center justify-center text-center animate-rise">
-              <p className="font-display text-3xl italic">{c.empty}</p>
+              <p className="font-display text-2xl italic sm:text-3xl">{c.empty}</p>
               <p className="mt-2 max-w-sm text-sm text-muted-foreground">{c.hint}</p>
             </div>
           )}
           {messages.map((m) => (
-            <div key={m.id} className={cn("flex animate-rise", m.role === "user" ? "justify-end" : "justify-start")}>
-              <div className={cn("max-w-[75%] whitespace-pre-wrap rounded-3xl px-5 py-3 text-[15px] leading-relaxed",
+            <div key={m.id} className={cn("flex animate-message", m.role === "user" ? "justify-end" : "justify-start")}>
+              <div className={cn("max-w-[90%] whitespace-pre-wrap break-words rounded-3xl px-4 py-3 text-[15px] leading-relaxed sm:max-w-[80%] sm:px-5",
                 m.role === "user" ? "rounded-br-md bg-bubble-user text-primary-foreground" : "rounded-bl-md border bg-bubble-ai")}>{m.content}</div>
             </div>
           ))}
           {loading && (
-            <div className="flex animate-rise"><div className="flex gap-1.5 rounded-3xl rounded-bl-md border bg-bubble-ai px-5 py-4" aria-label="Dessert is typing">
+            <div className="flex items-center gap-3 animate-rise"><div className="flex h-11 items-center gap-1.5 rounded-3xl rounded-bl-md border bg-bubble-ai px-5" role="status" aria-label="Dessert is thinking">
               {[0, 1, 2].map((i) => <span key={i} className="h-2 w-2 rounded-full bg-primary animate-dot" style={{ animationDelay: `${i * 0.15}s` }} />)}
-            </div></div>
+            </div><span className="text-xs text-muted-foreground">Thinking…</span></div>
           )}
           {error && <p className="text-center text-sm text-destructive animate-rise">{error}</p>}
-          <div ref={endRef} />
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="m-4 flex items-end gap-2 rounded-2xl border bg-muted/50 p-2 focus-within:ring-2 focus-within:ring-ring">
-          <textarea value={input} onChange={(e) => setInput(e.target.value)} rows={1} placeholder={c.placeholder} aria-label="Message"
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            className="max-h-40 flex-1 resize-none bg-transparent px-3 py-2 outline-none placeholder:text-muted-foreground" />
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="dessert-composer m-3 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-2 rounded-2xl border bg-muted/50 p-2 transition-shadow focus-within:ring-2 focus-within:ring-ring sm:m-4">
+          <textarea ref={composerRef} value={input} onChange={(e) => setInput(e.target.value)} rows={1} placeholder={c.placeholder} aria-label="Message"
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
+            className="max-h-36 min-h-11 min-w-0 w-full resize-none bg-transparent px-2 py-3 text-sm outline-none placeholder:text-muted-foreground sm:px-3 sm:text-[15px]" />
+          <div className="flex shrink-0 items-center gap-1">
           {voiceOk && (
-            <button type="button" onClick={toggleVoice} aria-label={listening ? "Stop voice input" : "Start voice input"}
-              className={cn("grid h-10 w-10 place-items-center rounded-xl transition-colors", listening ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-secondary")}>🎙</button>
+            <Button type="button" variant="ghost" size="icon" disabled={loading} onClick={toggleVoice} aria-label={listening ? "Stop voice input" : "Start voice input"} title={listening ? "Stop voice input" : "Start voice input"} aria-pressed={listening}
+              className={cn("h-11 w-11 rounded-xl", listening ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>{listening ? <Square /> : <Mic />}</Button>
           )}
-          <button type="submit" disabled={!input.trim() || loading} aria-label="Send"
-            className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-primary-foreground transition-all hover:glow disabled:opacity-40">➤</button>
+          <Button type="submit" size="icon" disabled={!input.trim() || loading} aria-label="Send" title="Send message"
+            className="h-11 w-11 rounded-xl hover:glow"><ArrowUp /></Button>
+          </div>
         </form>
       </section>
     </div>
