@@ -4,8 +4,10 @@ import { Avatar3D as Avatar } from "./Avatar3D";
 import { sendChat, type ChatMessage, type Emotion, type Mode } from "@/lib/dessert-api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, Mic, Square } from "lucide-react";
+import { ArrowUp, Mic, Square, MessageSquarePlus } from "lucide-react";
 import { companionEmotion } from "@/lib/dessert-state";
+import { claimCompanionGreeting, newCompanionSession, useChatSession } from "@/hooks/use-companion-session";
+import { GREETING_TEXT } from "@/lib/dessert-greeting";
 
 type Recognition = { interimResults: boolean; lang: string; onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void; abort: () => void };
 type VoiceWindow = Window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
@@ -17,11 +19,14 @@ const copy: Record<Mode, { title: string; empty: string; hint: string; placehold
 };
 
 export function ChatScreen({ mode }: { mode: Mode }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
+  const { session, update } = useChatSession(mode);
+  const { messages, input, emotion } = session;
+  const setMessages = (messages: ChatMessage[]) => update({ messages });
+  const setInput = (input: string) => update({ input });
+  const setEmotion = (emotion: Emotion) => update({ emotion });
+  const [greetingVisible, setGreetingVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [emotion, setEmotion] = useState<Emotion>("neutral");
   const [listening, setListening] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -85,7 +90,10 @@ export function ChatScreen({ mode }: { mode: Mode }) {
           ))}
         </nav>
         <div className="dessert-identity grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center justify-center gap-2 lg:flex lg:flex-1 lg:flex-col lg:gap-0 lg:py-6">
-          <Avatar emotion={displayEmotion} size={260} />
+          <Avatar emotion={displayEmotion} size={260} greeting={mode === "companion" ? {
+            sessionId: session.id, claim: claimCompanionGreeting,
+            onStart: () => setGreetingVisible(true), onEnd: () => setGreetingVisible(false),
+          } : undefined} />
           <div className="min-w-0 lg:text-center">
             <h1 className="font-display text-3xl italic lg:mt-4 lg:text-4xl">Dessert</h1>
             <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground sm:text-sm lg:justify-center">
@@ -93,15 +101,21 @@ export function ChatScreen({ mode }: { mode: Mode }) {
               {error ? "Connection unavailable" : loading ? "Thinking…" : listening ? "Listening…" : "Here with you"}
             </div>
             <span className="mt-3 inline-block rounded-full border border-primary/30 px-3 py-1 text-[10px] uppercase tracking-widest text-primary">{displayEmotion}</span>
+            {mode === "companion" && greetingVisible && <p role="status" className="mt-3 max-w-64 text-sm leading-relaxed text-primary animate-rise">{GREETING_TEXT}</p>}
           </div>
         </div>
         <p className="hidden text-center text-xs text-muted-foreground lg:block">Local AI · just you and Dessert</p>
       </aside>
 
       <section className="dessert-conversation glass flex min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl">
-        <header className="shrink-0 border-b px-4 py-3 sm:px-6 sm:py-4">
+        <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
+          <div className="min-w-0">
           <h2 className="font-display text-xl">{c.title}</h2>
           <p className="text-xs text-muted-foreground">{mode === "companion" ? `Chatting with ${NICK}` : "Cases · reviews · memory"}</p>
+          </div>
+          {mode === "companion" && <Button variant="ghost" size="icon" title="New chat" aria-label="New chat" disabled={loading} onClick={() => {
+            recRef.current?.stop(); setListening(false); setError(null); setGreetingVisible(false); newCompanionSession();
+          }}><MessageSquarePlus /></Button>}
         </header>
         <div ref={threadRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6" role="log" aria-label="Conversation" aria-live="polite">
           {messages.length === 0 && !loading && (

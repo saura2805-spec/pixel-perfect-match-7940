@@ -14,3 +14,5 @@
 - Preserve the browser-only dynamic Three.js import and existing local Express API boundary; no server rendering or cloud dependency is needed for the avatar.
 - Avatar color roles live in global CSS tokens; dispose scene resources on unmount and respect reduced-motion settings inside the render loop.
 - The canvas mount sets `data-scene-ready` after its first frame for browser verification; no public mood override or fabricated AI analysis is exposed.
+- Companion chat state is ephemeral browser memory subscribed with useSyncExternalStore; it survives mode navigation, resets on reload or explicit New chat, and atomically claims a greeting once per session without storing private conversations on disk.
+- Greeting joint motion is a pure elapsed-time function in dessert-greeting; the existing Three.js character owns articulated shoulders, elbows and wrists. Mentor hides these additions and never triggers a greeting.

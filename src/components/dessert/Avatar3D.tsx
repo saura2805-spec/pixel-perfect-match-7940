@@ -1,13 +1,18 @@
 import { useEffect, useRef } from "react";
 import type { Emotion } from "@/lib/dessert-api";
 import { AVATAR_POSES, easePose, type AvatarPose } from "@/lib/dessert-state";
+import { greetingPose, GREETING_DURATION } from "@/lib/dessert-greeting";
+
+type Greeting = { sessionId: number; claim: (id: number) => boolean; onStart: () => void; onEnd: () => void };
 
 // Procedural 3D Dessert built with three.js (loaded only in the browser).
 // Emotion is a prop so real backend emotion metadata can drive it later.
-export function Avatar3D({ emotion = "neutral", size = 280 }: { emotion?: Emotion; size?: number }) {
+export function Avatar3D({ emotion = "neutral", size = 280, greeting }: { emotion?: Emotion; size?: number; greeting?: Greeting | undefined }) {
   const mount = useRef<HTMLDivElement>(null);
   const target = useRef<AvatarPose>(AVATAR_POSES[emotion]);
   target.current = AVATAR_POSES[emotion];
+  const welcome = useRef(greeting);
+  welcome.current = greeting;
 
   useEffect(() => {
     let disposed = false;
@@ -41,6 +46,31 @@ export function Avatar3D({ emotion = "neutral", size = 280 }: { emotion?: Emotio
       body.position.y = -1.05; root.add(body);
       const collar = new T.Mesh(new T.TorusGeometry(0.42, 0.08, 12, 32), mat("collar"));
       collar.rotation.x = Math.PI / 2; collar.position.y = -0.48; root.add(collar);
+
+      // Jointed sleeves and hands extend the same character, without external assets.
+      const arms = new T.Group(); root.add(arms);
+      const shoulders: InstanceType<typeof T.Group>[] = [];
+      const elbows: InstanceType<typeof T.Group>[] = [];
+      const wrists: InstanceType<typeof T.Group>[] = [];
+      for (const side of [-1, 1]) {
+        const shoulder = new T.Group(); shoulder.position.set(side * 0.53, -0.62, 0.05); arms.add(shoulder);
+        const sleeve = new T.Mesh(new T.CapsuleGeometry(0.12, 0.25, 4, 12), mat("dress"));
+        sleeve.position.y = -0.16; shoulder.add(sleeve);
+        const elbow = new T.Group(); elbow.position.y = -0.34; shoulder.add(elbow);
+        const forearm = new T.Mesh(new T.CapsuleGeometry(0.075, 0.22, 4, 12), mat("skin"));
+        forearm.position.y = -0.13; elbow.add(forearm);
+        const wrist = new T.Group(); wrist.position.y = -0.29; elbow.add(wrist);
+        const palm = new T.Mesh(new T.SphereGeometry(0.105, 12, 12), mat("skin"));
+        palm.scale.set(0.9, 1.1, 0.5); palm.position.y = -0.07; wrist.add(palm);
+        for (let finger = 0; finger < 4; finger++) {
+          const digit = new T.Mesh(new T.CapsuleGeometry(0.023, 0.075, 3, 8), mat("skin"));
+          digit.position.set((finger - 1.5) * 0.047, -0.17 - (finger === 0 || finger === 3 ? 0 : 0.02), 0);
+          digit.rotation.z = (finger - 1.5) * -0.1; wrist.add(digit);
+        }
+        const thumb = new T.Mesh(new T.CapsuleGeometry(0.028, 0.065, 3, 8), mat("skin"));
+        thumb.position.set(-0.11, -0.07, 0); thumb.rotation.z = -0.65; wrist.add(thumb);
+        shoulders.push(shoulder); elbows.push(elbow); wrists.push(wrist);
+      }
 
       head.add(new T.Mesh(new T.SphereGeometry(1, 32, 32), mat("skin", 0.75)));
       const hairM = mat("hair", 0.45);
@@ -79,18 +109,36 @@ export function Avatar3D({ emotion = "neutral", size = 280 }: { emotion?: Emotio
       let cur = { ...target.current };
       let raf = 0; const t0 = performance.now(); let previous = t0; let nextBlink = 3;
       let lastDraw = 0;
+      let seenSession = 0; let greetingStarted: number | null = null;
       const loop = (now = performance.now()) => {
         raf = requestAnimationFrame(loop);
         if (now - lastDraw < 1000 / 30) return;
         lastDraw = now;
         const delta = (now - previous) / 1000; previous = now;
         const t = (performance.now() - t0) / 1000;
-        const p = target.current;
-        if (motion.matches && el.dataset["sceneReady"] && Object.keys(p).every((k) => Math.abs(cur[k as keyof AvatarPose] - p[k as keyof AvatarPose]) < 0.001)) return;
+        const config = welcome.current;
+        arms.visible = Boolean(config);
+        if (config && seenSession !== config.sessionId) {
+          seenSession = config.sessionId;
+          greetingStarted = config.claim(config.sessionId) ? now : null;
+          if (greetingStarted !== null) config.onStart();
+        }
+        const seconds = greetingStarted === null ? GREETING_DURATION : (now - greetingStarted) / 1000;
+        const wave = greetingPose(seconds, motion.matches);
+        if (greetingStarted !== null && !wave.active) { greetingStarted = null; config?.onEnd(); }
+        el.dataset["greetingActive"] = String(wave.active);
+        el.dataset["waveLift"] = wave.lift.toFixed(3);
+        const p = { ...target.current };
+        for (const k of Object.keys(p) as (keyof AvatarPose)[]) p[k] += (AVATAR_POSES.happy[k] - p[k]) * wave.warmth;
+        if (motion.matches && !wave.active && el.dataset["sceneReady"] && Object.keys(p).every((k) => Math.abs(cur[k as keyof AvatarPose] - p[k as keyof AvatarPose]) < 0.001)) return;
         cur = motion.matches ? { ...p } : easePose(cur, p, delta);
         const idle = motion.matches ? 0 : 1;
         root.position.y = idle * Math.sin(t * (1.4 + cur.open)) * cur.float;
         root.scale.setScalar(1 + idle * Math.sin(t * 1.4) * 0.008);
+        root.rotation.y = wave.turn;
+        shoulders.forEach((shoulder, i) => { shoulder.rotation.z = i === 1 ? 0.12 + wave.lift * 1.05 : -0.12; });
+        elbows.forEach((elbow, i) => { elbow.rotation.z = i === 1 ? wave.lift * 1.65 : 0; });
+        wrists.forEach((wrist, i) => { wrist.rotation.z = i === 1 ? wave.wrist : 0; });
         head.rotation.z = cur.tilt + idle * Math.sin(t * 0.7) * 0.025;
         head.rotation.y = cur.gaze + idle * Math.sin(t * 0.5) * 0.06;
         head.rotation.x = cur.nod + idle * Math.sin(t * 1.3) * Math.abs(cur.nod) * 0.5;
