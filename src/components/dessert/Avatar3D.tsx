@@ -115,24 +115,23 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
       for (const side of [-1, 1]) {
         const ear = new T.Mesh(new T.SphereGeometry(0.16, 16, 12), skinMaterial);
         ear.scale.set(0.7, 1.2, 0.6); ear.position.set(side * 0.96, -0.08, 0.06); head.add(ear);
-        const earring = new T.Mesh(new T.SphereGeometry(0.04, 12, 8), mat("bow", 0.3));
-        earring.position.set(side * 0.98, -0.23, 0.14); head.add(earring);
       }
-      const hairM = mat("hair", 0.45);
-      const hair = new T.Mesh(new T.SphereGeometry(1.08, 48, 48, 0, Math.PI * 2, 0, Math.PI * 0.55), hairM);
-      hair.rotation.x = -0.35; head.add(hair);
-      const back = new T.Mesh(new T.SphereGeometry(1.05, 32, 32), hairM);
-      back.scale.set(1.05, 1.25, 0.8); back.position.set(0, -0.35, -0.35); head.add(back);
+      // Long, centre-parted dark hair falling past the shoulders.
+      const hairM = mat("hair", 0.5);
+      const hair = new T.Mesh(new T.SphereGeometry(1.08, 48, 48, 0, Math.PI * 2, 0, Math.PI * 0.42), hairM);
+      hair.rotation.x = -0.3; head.add(hair);
+      const back = new T.Mesh(new T.CapsuleGeometry(0.95, 1.3, 12, 32), hairM);
+      back.scale.set(1.18, 1, 0.55); back.position.set(0, -0.75, -0.5); head.add(back);
+      for (const side of [-1, 1]) {
+        const lock = new T.Mesh(new T.CapsuleGeometry(0.26, 1.35, 8, 20), hairM);
+        lock.scale.set(1, 1, 0.75); lock.position.set(side * 0.98, -0.75, 0.05); lock.rotation.z = side * 0.12; head.add(lock);
+        const curl = new T.Mesh(new T.SphereGeometry(0.28, 16, 12), hairM);
+        curl.scale.set(1.1, 0.7, 0.8); curl.position.set(side * 1.08, -1.5, 0.05); head.add(curl);
+      }
       const strandMaterial = mat("hair-detail", 0.55);
-      for (let i = -3; i <= 3; i++) {
-        const points = [new T.Vector3(i * 0.13, 1.04, 0.26), new T.Vector3(i * 0.19 + 0.07, 0.82, 0.77), new T.Vector3(i * 0.23 + 0.09, 0.48 + Math.abs(i) * 0.035, 0.94)];
-        head.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points), 12, 0.025, 6, false), strandMaterial));
-      }
-      for (const x of [-1, 1]) {
-        const bun = new T.Mesh(new T.SphereGeometry(0.32, 24, 24), hairM);
-        bun.position.set(x * 0.75, 0.8, -0.1); head.add(bun);
-        const bow = new T.Mesh(new T.ConeGeometry(0.12, 0.25, 12), mat("bow"));
-        bow.position.set(x * 0.9, 1.0, 0.1); bow.rotation.z = x * 1.2; head.add(bow);
+      for (const side of [-1, 1]) for (let i = 0; i < 4; i++) {
+        const points = [new T.Vector3(side * 0.04, 1.06, 0.3), new T.Vector3(side * (0.35 + i * 0.12), 0.86 - i * 0.05, 0.72 - i * 0.08), new T.Vector3(side * (0.78 + i * 0.07), 0.25 - i * 0.12, 0.55 - i * 0.1), new T.Vector3(side * (0.98 + i * 0.03), -0.9 - i * 0.12, 0.25)];
+        head.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points), 20, 0.03, 6, false), strandMaterial));
       }
 
       const eyes: InstanceType<typeof T.Group>[] = [];
