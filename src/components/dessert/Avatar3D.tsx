@@ -216,9 +216,10 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
         root.rotation.y = wave.turn;
         const hands = [joints.left, joints.right];
         shoulders.forEach((shoulder, i) => { const hand = hands[i]; if (!hand) return; shoulder.rotation.set(hand.forward, 0, hand.shoulder); });
-        elbows.forEach((elbow, i) => { const hand = hands[i]; if (hand) elbow.rotation.z = hand.elbow; });
+        // Elbows flex forward (never hyperextend backward); sideways bend only once the arm is raised.
+        elbows.forEach((elbow, i) => { const hand = hands[i]; if (!hand) return; const raised = Math.min(Math.abs(hand.shoulder) / 1.1, 1); elbow.rotation.set(-Math.abs(hand.elbow) * (1 - raised * 0.6), 0, hand.elbow * raised * 0.85); });
         wrists.forEach((wrist, i) => { const hand = hands[i]; if (hand) wrist.rotation.set(0, hand.palm, hand.wrist); });
-        fingers.forEach((handFingers, i) => { const hand = hands[i]; if (hand) handFingers.forEach((finger) => { finger.rotation.x = hand.curl; }); });
+        fingers.forEach((handFingers, i) => { const hand = hands[i]; if (hand) handFingers.forEach((finger) => { finger.rotation.x = -Math.abs(hand.curl); }); });
         el.dataset["gestureMode"] = context.current.mode;
         el.dataset["handPose"] = context.current.emotion;
         head.rotation.z = cur.tilt + idle * Math.sin(t * 0.7) * 0.025;
@@ -227,7 +228,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
         let blink = 1;
         if (!motion.matches && t > nextBlink) { const d = t - nextBlink; blink = d < 0.22 ? Math.abs(1 - d / 0.11) : 1; if (d > 0.22) nextBlink = t + 3 + Math.random() * 4; }
         eyes.forEach((e) => e.scale.set(1, Math.max(0.05, cur.eye * blink), 1));
-        brows.forEach((b, i) => { b.rotation.z = Math.PI / 2 + (i === 0 ? -1 : 1) * cur.brow; b.position.y = 0.29 + Math.abs(cur.brow) * 0.13; });
+        brows.forEach((b, i) => { b.rotation.z = Math.PI / 2 + (i === 0 ? -1 : 1) * cur.brow; b.position.y = 0.37 + Math.abs(cur.brow) * 0.1; });
         const s = cur.smile;
         mouth.rotation.z = s >= 0 ? Math.PI : 0;
         mouth.scale.set(0.6 + Math.abs(s) * 0.6, 0.3 + Math.abs(s) * 0.9, 1);
