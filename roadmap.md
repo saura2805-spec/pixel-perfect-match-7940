@@ -1,6 +1,6 @@
 # Dessert refinements
-- [ ] Refine the existing face and articulated hands, with gestures in both modes.
-- [ ] Verify gesture rules, greeting replay, reduced motion, and mobile/desktop rendering.
+- [x] Refine the existing face and articulated hands, with gestures in both modes.
+- [x] Verify gesture rules, greeting replay, reduced motion, and mobile/desktop rendering.
 - [x] Add articulated startup wave and exact personalized greeting.
 - [x] Preserve Companion session across navigation and replay only for explicit New chat.
 - [x] Verify session rules, reduced motion, and mobile/desktop greeting rendering.
