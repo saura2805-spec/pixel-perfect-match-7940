@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 type Recognition = { interimResults: boolean; lang: string; onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void; abort: () => void };
 type VoiceWindow = Window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
 
-const NICK = "Mango00";
+const NICK = "Mango 🥭";
 const copy: Record<Mode, { title: string; empty: string; hint: string; placeholder: string }> = {
   companion: { title: "Dessert", empty: `Hi ${NICK}, I'm here.`, hint: "Tell me about your day — the big things or the tiny ones.", placeholder: `Talk to Dessert…` },
   mentor: { title: "Medical Mentor", empty: `Ready when you are, ${NICK}.`, hint: "Share a case, ask for a review, or quiz yourself.", placeholder: "Ask a question…" },

@@ -65,12 +65,12 @@ export function JournalScreen({ learning = false }: { learning?: boolean }) {
             {r.caseId && <p className="mt-1 text-xs text-primary">{journal.cases.find((c) => c.id === r.caseId)?.title}</p>}
             <Detail label="Revised diagnosis" value={r.revisedDiagnosis} /><Detail label="Missed clue / error" value={r.error} />
             <Lesson label="Lesson to remember" text={r.lesson} />
-          </article>) : journal.cases.map((c) => <article key={c.id} className="rounded-lg border bg-card/60 p-5">
-            <RecordHeader date={c.createdAt} onDelete={() => { if (window.confirm("Delete this case? Linked learning reviews will be kept.")) journal.deleteCase(c.id); }} />
+          </article>) : journal.cases.map((c, i) => <article key={c.id} className="rounded-2xl border bg-card/60 p-6 text-center">
+            <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground"><span>CASE #{journal.cases.length - i}</span><span className="flex items-center gap-1"><time dateTime={c.createdAt}>{c.createdAt.slice(0, 19).replace("T", " ")}</time><Button variant="ghost" size="icon" aria-label="Delete record" title="Delete record" onClick={() => { if (window.confirm("Delete this case? Linked learning reviews will be kept.")) journal.deleteCase(c.id); }}><Trash2 className="size-4" /></Button></span></div>
             <h3 className="mt-3 break-words text-lg font-semibold">{c.title}</h3><p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">{c.history}</p>
-            <Detail label="Diagnosis" value={c.diagnosis || "Undetermined"} /><Detail label="Reasoning" value={c.reasoning || "Not recorded"} />
-            {c.lessons && <Lesson label="Key lesson" text={c.lessons} />}
-            <Button asChild variant="ghost" className="mt-3 h-auto whitespace-normal text-primary"><Link to="/mentor" search={{ caseId: c.id }}>Discuss with Medical Mentor <ArrowUpRight /></Link></Button>
+            <dl className="mt-4 text-sm">{[["Diagnosis", c.diagnosis || "Undetermined"], ["Reasoning", c.reasoning || "Not recorded"]].map(([k, v]) => <div key={k} className="grid grid-cols-[1fr_2fr] gap-4 border-t py-4"><dt className="font-medium">{k}</dt><dd className="whitespace-pre-wrap break-words text-muted-foreground">{v}</dd></div>)}</dl>
+            {c.lessons && <div className="mt-2 rounded-xl border border-online/30 bg-online/10 p-5"><h4 className="text-sm font-semibold text-online">Key lesson</h4><p className="mt-2 whitespace-pre-wrap break-words text-sm">{c.lessons}</p></div>}
+            <Button asChild variant="ghost" className="mt-4 h-auto whitespace-normal text-primary"><Link to="/mentor" search={{ caseId: c.id }}>Discuss with Medical Mentor <ArrowUpRight /></Link></Button>
           </article>)}
         </div>
       </div>

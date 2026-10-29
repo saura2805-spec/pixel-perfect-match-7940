@@ -1,4 +1,4 @@
-export const GREETING_TEXT = "Hii Mango00! 💜 I’m happy you’re here.";
+export const GREETING_TEXT = "Hii Mango 🥭! 💜 I’m happy you’re here.";
 export const GREETING_DURATION = 5.2;
 const smooth = (n: number) => { const v = Math.max(0, Math.min(1, n)); return v * v * (3 - 2 * v); };
 
