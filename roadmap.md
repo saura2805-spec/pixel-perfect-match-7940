@@ -1,4 +1,7 @@
 # Dessert refinements
+- [x] Match saved Learning History reviews to the supplied screenshot.
+- [x] Correct avatar surface overlaps and arm movement; refine reference likeness.
+- [x] Verify review saving and avatar rendering in both modes.
 - [x] Add Case Journal and Learning History with local saves and linked records.
 - [x] Add workspace navigation, Mentor case/style controls, and suggested prompts.
 - [x] Verify saved records, Mentor context, navigation, and mobile layout.
