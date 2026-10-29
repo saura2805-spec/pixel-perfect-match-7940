@@ -39,3 +39,16 @@ export function easeGesture(current: GesturePose, target: GesturePose, delta: nu
   };
   return { left: blend(current.left, target.left), right: blend(current.right, target.right) };
 }
+
+// Negative X flex brings a downward limb toward the viewer (+Z).
+// Sideways flex is mirrored and limited; it never changes the forward hinge sign.
+export function armJointRotation(pose: ArmPose, side: -1 | 1) {
+  const raised = Math.min(Math.abs(pose.shoulder) / 1.8, 1);
+  return {
+    shoulder: Math.max(-2.1, Math.min(2.1, pose.shoulder)),
+    forward: Math.max(-0.45, Math.min(0.2, pose.forward)),
+    elbowForward: -Math.min(Math.abs(pose.elbow), 1.7) * (1 - raised * 0.65),
+    elbowSide: side * Math.min(Math.abs(pose.elbow), 1.7) * raised * 0.55,
+    curl: -Math.min(Math.max(pose.curl, 0), 0.85),
+  };
+}
