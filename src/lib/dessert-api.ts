@@ -3,9 +3,9 @@
 // Expected: POST {base}/api/chat  body {message, mode, history}  -> {reply, emotion?}
 export type Mode = "companion" | "mentor";
 export type Emotion = "happy" | "sad" | "affectionate" | "thinking" | "excited" | "neutral" | "listening";
-export type ChatMessage = { id: string; role: "user" | "assistant"; content: string; emotion?: Emotion };
+export type ChatMessage = { id: string; role: "user" | "assistant"; content: string; emotion?: Emotion | undefined };
 
-const BASE = (import.meta.env.VITE_DESSERT_API_URL as string | undefined) ?? "http://localhost:3001";
+const BASE = (import.meta.env["VITE_DESSERT_API_URL"] as string | undefined) ?? "http://localhost:3001";
 const EMOTIONS: Emotion[] = ["happy", "sad", "affectionate", "thinking", "excited", "neutral", "listening"];
 
 export async function sendChat(mode: Mode, message: string, history: ChatMessage[]) {
