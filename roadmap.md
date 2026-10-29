@@ -1,7 +1,7 @@
 # Dessert refinements
-- [ ] Add articulated startup wave and exact personalized greeting.
-- [ ] Preserve Companion session across navigation and replay only for explicit New chat.
-- [ ] Verify session rules, reduced motion, and mobile/desktop greeting rendering.
+- [x] Add articulated startup wave and exact personalized greeting.
+- [x] Preserve Companion session across navigation and replay only for explicit New chat.
+- [x] Verify session rules, reduced motion, and mobile/desktop greeting rendering.
 - [x] Refine avatar framing, idle motion, and seven mood transitions.
 - [x] Polish state reactions, conversation animations, and composer.
 - [x] Check desktop, tablet, mobile, reduced motion, and existing navigation.
