@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Avatar } from "./Avatar";
+import { Avatar3D as Avatar } from "./Avatar3D";
 import { sendChat, type ChatMessage, type Emotion, type Mode } from "@/lib/dessert-api";
 import { cn } from "@/lib/utils";
 
