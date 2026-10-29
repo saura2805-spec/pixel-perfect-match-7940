@@ -7,7 +7,7 @@ type Greeting = { sessionId: number; claim: (id: number) => boolean; onStart: ()
 
 // Procedural 3D Dessert built with three.js (loaded only in the browser).
 // Emotion is a prop so real backend emotion metadata can drive it later.
-export function Avatar3D({ emotion = "neutral", size = 280, greeting }: { emotion?: Emotion; size?: number; greeting?: Greeting }) {
+export function Avatar3D({ emotion = "neutral", size = 280, greeting }: { emotion?: Emotion; size?: number; greeting?: Greeting | undefined }) {
   const mount = useRef<HTMLDivElement>(null);
   const target = useRef<AvatarPose>(AVATAR_POSES[emotion]);
   target.current = AVATAR_POSES[emotion];

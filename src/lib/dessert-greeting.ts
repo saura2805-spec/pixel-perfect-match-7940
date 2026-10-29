@@ -11,7 +11,7 @@ export function greetingPose(seconds: number, reducedMotion = false) {
   return {
     active, warmth,
     lift,
-    wrist: reducedMotion ? 0 : Math.sin(waveProgress * Math.PI * 6) * 0.3 * lift,
-    turn: reducedMotion ? 0 : -0.22 * (1 - smooth(seconds / 1.1)) * warmth,
+    wrist: reducedMotion || !active ? 0 : Math.sin(waveProgress * Math.PI * 6) * 0.3 * lift,
+    turn: reducedMotion || !active ? 0 : -0.22 * (1 - smooth(seconds / 1.1)) * warmth,
   };
 }
