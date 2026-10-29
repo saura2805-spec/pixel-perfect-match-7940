@@ -107,7 +107,7 @@ export function ChatScreen({ mode }: { mode: Mode }) {
           ))}
         </nav>
         <div className="dessert-identity grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center justify-center gap-2 lg:flex lg:flex-1 lg:flex-col lg:gap-0 lg:py-6">
-          <Avatar emotion={displayEmotion} size={260} greeting={mode === "companion" ? {
+          <Avatar emotion={displayEmotion} mode={mode} size={260} greeting={mode === "companion" ? {
             sessionId: session.id, claim: claimCompanionGreeting,
             onStart: () => setGreetingVisible(true), onEnd: () => setGreetingVisible(false),
           } : undefined} />

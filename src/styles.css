@@ -83,6 +83,10 @@
   --avatar-shine: #ffffff;
   --avatar-blush: #ff8fb0;
   --avatar-mouth: #8a3550;
+  --avatar-sclera: #fff5f0;
+  --avatar-iris: #82558c;
+  --avatar-hair-detail: #ad72b9;
+  --avatar-nail: #f9d0ce;
 }
 
 @layer base {
