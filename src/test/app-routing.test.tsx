@@ -11,6 +11,8 @@ describe("App routing", () => {
     const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
     expect(router.matchRoutes("/").at(-1)?.routeId).toBe("/");
     expect(router.matchRoutes("/mentor").at(-1)?.routeId).toBe("/mentor");
+    expect(router.matchRoutes("/journal").at(-1)?.routeId).toBe("/journal");
+    expect(router.matchRoutes("/learning").at(-1)?.routeId).toBe("/learning");
   });
   it("matches a page for / instead of falling back to not found", () => {
     const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
