@@ -18,5 +18,5 @@ export const Route = createFileRoute("/mentor")({
 
 function MentorPage() {
   const { caseId } = Route.useSearch();
-  return <ChatScreen mode="mentor" selectedCaseId={caseId} />;
+  return <ChatScreen mode="mentor" selectedCaseId={caseId ?? "none"} />;
 }
