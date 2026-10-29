@@ -70,6 +70,19 @@
   --gradient-halo: radial-gradient(circle, oklch(0.76 0.13 355 / 45%), oklch(0.72 0.08 300 / 20%) 45%, transparent 70%);
   --shadow-soft: 0 20px 60px -20px oklch(0.05 0.02 330 / 80%);
   --shadow-glow: 0 0 40px -8px oklch(0.76 0.13 355 / 55%);
+  --avatar-light: #ffe6f2;
+  --avatar-shadow: #3a1f3a;
+  --avatar-key: #ffd1e3;
+  --avatar-rim: #b9a3ff;
+  --avatar-dress: #b59ad6;
+  --avatar-collar: #fff1f6;
+  --avatar-skin: #ffe0d6;
+  --avatar-hair: #c58bd0;
+  --avatar-bow: #ff8fb8;
+  --avatar-eye: #3b1e4a;
+  --avatar-shine: #ffffff;
+  --avatar-blush: #ff8fb0;
+  --avatar-mouth: #8a3550;
 }
 
 @layer base {
@@ -105,6 +118,23 @@
 @utility animate-halo { animation: pulse-halo 4s ease-in-out infinite; }
 @utility animate-dot { animation: dot 1.2s infinite ease-in-out; }
 @utility animate-rise { animation: rise .35s ease-out both; }
+@keyframes message-enter { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@utility animate-message { animation: message-enter .32s cubic-bezier(.2,.7,.2,1) both; }
+
+.dessert-layout { height: 100dvh; grid-template-rows: auto minmax(0, 1fr); }
+.dessert-avatar { width: 150px; max-width: 100%; aspect-ratio: 1; }
+.dessert-composer { margin-bottom: max(.75rem, env(safe-area-inset-bottom)); }
+@media (max-width: 374px), (max-height: 650px) and (max-width: 1023px) {
+  .dessert-avatar { width: 112px; }
+  .dessert-profile { padding-block: .5rem; }
+}
+@media (min-width: 640px) {
+  .dessert-avatar { width: 180px; }
+}
+@media (min-width: 1024px) {
+  .dessert-layout { grid-template-rows: minmax(0, 1fr); }
+  .dessert-avatar { width: 260px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
