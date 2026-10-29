@@ -66,8 +66,10 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
       body.position.y = -1.05; root.add(body);
       const neck = new T.Mesh(new T.CapsuleGeometry(0.21, 0.17, 6, 16), skinMaterial);
       neck.position.set(0, -0.42, 0.05); root.add(neck);
-      const collar = new T.Mesh(new T.TorusGeometry(0.42, 0.08, 12, 32), mat("collar"));
-      collar.rotation.x = Math.PI / 2; collar.position.y = -0.48; root.add(collar);
+      const collar = new T.Mesh(new T.CylinderGeometry(0.27, 0.32, 0.26, 32, 1, true), dressMaterial);
+      collar.position.set(0, -0.5, 0.03); root.add(collar);
+      const collarRoll = new T.Mesh(new T.TorusGeometry(0.29, 0.05, 12, 32), dressMaterial);
+      collarRoll.rotation.x = Math.PI / 2; collarRoll.position.set(0, -0.4, 0.03); root.add(collarRoll);
 
       // Jointed sleeves and hands extend the same character, without external assets.
       const arms = new T.Group(); root.add(arms);
@@ -149,11 +151,22 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
         shine.scale.setScalar(0.7); shine.position.set(0.03, 0.04, 0.125); eye.add(shine);
         head.add(eye); eyes.push(eye);
         const brow = new T.Mesh(new T.CapsuleGeometry(0.018, 0.17, 4, 8), hairM);
-        brow.position.set(x * 0.36, 0.29, 0.97); brow.rotation.z = Math.PI / 2;
+        brow.position.set(x * 0.36, 0.37, 0.95); brow.rotation.z = Math.PI / 2;
         head.add(brow); brows.push(brow);
         const cheek = new T.Mesh(new T.CircleGeometry(0.14, 24), new T.MeshBasicMaterial({ color: color("blush"), transparent: true, opacity: 0.4 }));
         cheek.position.set(x * 0.55, -0.2, 0.84); cheek.rotation.y = x * 0.55; head.add(cheek); cheeks.push(cheek);
+        // Round dark-framed glasses and light freckles, as in the reference.
+        const lens = new T.Mesh(new T.TorusGeometry(0.27, 0.035, 12, 40), mat("bow", 0.35));
+        lens.position.set(x * 0.38, 0.02, 1.0); lens.rotation.y = x * 0.28; head.add(lens);
+        const temple = new T.Mesh(new T.CapsuleGeometry(0.022, 0.6, 4, 8), mat("bow", 0.35));
+        temple.rotation.x = Math.PI / 2; temple.position.set(x * 0.9, 0.06, 0.62); temple.rotation.z = x * 0.15; head.add(temple);
+        for (let f = 0; f < 4; f++) {
+          const freckle = new T.Mesh(new T.CircleGeometry(0.012, 8), mat("freckle", 0.8));
+          freckle.position.set(x * (0.12 + f * 0.05), -0.12 - (f % 2) * 0.04, 0.99 - f * 0.02); freckle.rotation.y = x * 0.2; head.add(freckle);
+        }
       }
+      const bridge = new T.Mesh(new T.CapsuleGeometry(0.018, 0.12, 4, 8), mat("bow", 0.35));
+      bridge.rotation.z = Math.PI / 2; bridge.position.set(0, 0.08, 1.04); head.add(bridge);
       const mouth = new T.Mesh(new T.TorusGeometry(0.13, 0.025, 8, 24, Math.PI), mat("mouth"));
       mouth.position.set(0, -0.32, 0.95); head.add(mouth);
       const openMouth = new T.Mesh(new T.CircleGeometry(0.11, 24), mat("mouth"));
