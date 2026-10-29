@@ -31,8 +31,25 @@ export function ChatScreen({ mode }: { mode: Mode }) {
   const threadRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const recRef = useRef<Recognition | null>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
   const [voiceOk, setVoiceOk] = useState(false);
   const c = copy[mode];
+
+  useEffect(() => {
+    if (mode !== "companion") return;
+    const viewport = window.visualViewport;
+    const resize = () => {
+      const el = layoutRef.current;
+      if (!el) return;
+      const height = viewport?.height ?? window.innerHeight;
+      el.style.setProperty("--dessert-viewport-height", `${height}px`);
+      el.dataset["compact"] = String(window.innerWidth < 1024 && height < 500);
+    };
+    resize();
+    viewport?.addEventListener("resize", resize);
+    window.addEventListener("resize", resize);
+    return () => { viewport?.removeEventListener("resize", resize); window.removeEventListener("resize", resize); };
+  }, [mode]);
 
   useEffect(() => {
     const voiceWindow = window as VoiceWindow;
@@ -81,7 +98,7 @@ export function ChatScreen({ mode }: { mode: Mode }) {
   }
 
   return (
-    <div className="dessert-layout mx-auto grid max-w-7xl gap-3 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-6 lg:p-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div ref={layoutRef} data-mode={mode} className="dessert-layout mx-auto grid max-w-7xl gap-3 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-6 lg:p-6 xl:grid-cols-[360px_minmax(0,1fr)]">
       <aside className="dessert-profile glass flex min-w-0 flex-col items-center rounded-3xl p-3 sm:p-4 lg:p-6">
         <nav className="grid w-full grid-cols-2 gap-1 rounded-full bg-muted/60 p-1 text-sm" aria-label="Modes">
           {([["/", "Companion"], ["/mentor", "Medical Mentor"]] as const).map(([to, label]) => (
