@@ -104,7 +104,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
       }
 
       const faceGeometry = new T.SphereGeometry(1, 40, 32);
-      const vertices = faceGeometry.attributes.position;
+      const vertices = faceGeometry.getAttribute("position");
       for (let i = 0; i < vertices.count; i++) {
         const y = vertices.getY(i);
         vertices.setX(i, vertices.getX(i) * (y < -0.2 ? 1 + (y + 0.2) * 0.16 : 1));
