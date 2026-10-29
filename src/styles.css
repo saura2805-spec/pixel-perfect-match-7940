@@ -149,6 +149,7 @@
   .dessert-layout[data-compact="true"] [role="log"] { padding-block: 8px; }
   .dessert-layout[data-compact="true"] .dessert-composer { margin: 8px; margin-bottom: max(8px, env(safe-area-inset-bottom)); }
   .dessert-layout[data-compact="true"] .dessert-composer textarea { max-height: 72px; }
+  .dessert-layout[data-compact="true"]:has(.dessert-composer textarea:focus) .dessert-empty { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

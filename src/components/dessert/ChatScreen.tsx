@@ -136,7 +136,7 @@ export function ChatScreen({ mode }: { mode: Mode }) {
         </header>
         <div ref={threadRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6" role="log" aria-label="Conversation" aria-live="polite">
           {messages.length === 0 && !loading && (
-            <div className="flex h-full flex-col items-center justify-center text-center animate-rise">
+            <div className="dessert-empty flex h-full flex-col items-center justify-center text-center animate-rise">
               <p className="font-display text-2xl italic sm:text-3xl">{c.empty}</p>
               <p className="mt-2 max-w-sm text-sm text-muted-foreground">{c.hint}</p>
             </div>
