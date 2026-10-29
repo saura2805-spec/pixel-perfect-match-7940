@@ -17,3 +17,5 @@
 - Companion chat state is ephemeral browser memory subscribed with useSyncExternalStore; it survives mode navigation, resets on reload or explicit New chat, and atomically claims a greeting once per session without storing private conversations on disk.
 - Greeting joint motion is a pure elapsed-time function in dessert-greeting; mood-based joint and finger poses live in browser-safe dessert-gestures. Both modes show the existing articulated character, with restrained Mentor gestures and no Mentor greeting, so behavior is testable without WebGL.
 - Companion measures visualViewport height on resize so mobile keyboards do not obscure the composer; compact CSS is scoped to Companion and short viewports, preserving Mentor and desktop layouts.
+- Clinical cases and learning reviews use validated browser-local records, separate from ephemeral chat history; hydrate after mounting and report storage failures, keeping this local-only app independent of Cloud.
+- Mentor case and response-style context is composed into the existing message field; preserve the Express request contract and render the user's original message in the transcript.

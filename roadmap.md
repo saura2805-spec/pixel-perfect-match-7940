@@ -1,4 +1,7 @@
 # Dessert refinements
+- [x] Add Case Journal and Learning History with local saves and linked records.
+- [x] Add workspace navigation, Mentor case/style controls, and suggested prompts.
+- [x] Verify saved records, Mentor context, navigation, and mobile layout.
 - [x] Refine the existing face and articulated hands, with gestures in both modes.
 - [x] Verify gesture rules, greeting replay, reduced motion, and mobile/desktop rendering.
 - [x] Add articulated startup wave and exact personalized greeting.

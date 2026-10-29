@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { Avatar3D as Avatar } from "./Avatar3D";
 import { sendChat, type ChatMessage, type Emotion, type Mode } from "@/lib/dessert-api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, Mic, Square, MessageSquarePlus } from "lucide-react";
+import { ArrowUp, ArrowUpRight, Mic, Square, MessageSquarePlus } from "lucide-react";
 import { companionEmotion } from "@/lib/dessert-state";
 import { claimCompanionGreeting, newCompanionSession, useChatSession } from "@/hooks/use-companion-session";
 import { GREETING_TEXT } from "@/lib/dessert-greeting";
+import { WorkspaceNav } from "./WorkspaceNav";
+import { useDessertJournal } from "@/hooks/use-dessert-journal";
+import { mentorMessage, RESPONSE_STYLES } from "@/lib/dessert-journal";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Recognition = { interimResults: boolean; lang: string; onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void; abort: () => void };
 type VoiceWindow = Window & { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
@@ -18,7 +22,11 @@ const copy: Record<Mode, { title: string; empty: string; hint: string; placehold
   mentor: { title: "Medical Mentor", empty: `Ready when you are, ${NICK}.`, hint: "Share a case, ask for a review, or quiz yourself.", placeholder: "Ask a question…" },
 };
 
-export function ChatScreen({ mode }: { mode: Mode }) {
+export function ChatScreen({ mode, selectedCaseId }: { mode: Mode; selectedCaseId?: string }) {
+  const journal = useDessertJournal();
+  const [caseId, setCaseId] = useState(selectedCaseId ?? "none");
+  const [styleId, setStyleId] = useState("detailed");
+  useEffect(() => { setCaseId(selectedCaseId ?? "none"); }, [selectedCaseId]);
   const { session, update } = useChatSession(mode);
   const { messages, input, emotion } = session;
   const setMessages = (messages: ChatMessage[]) => update({ messages });
@@ -64,6 +72,7 @@ export function ChatScreen({ mode }: { mode: Mode }) {
     const el = composerRef.current;
     if (el) { el.style.height = "auto"; el.style.height = `${Math.min(el.scrollHeight, 144)}px`; }
   }, [input]);
+  useEffect(() => { composerRef.current?.focus({ preventScroll: true }); }, [mode]);
 
   const displayEmotion = companionEmotion(input, listening, loading, emotion);
 
@@ -75,13 +84,14 @@ export function ChatScreen({ mode }: { mode: Mode }) {
     const next = [...messages, userMsg];
     setMessages(next); setInput(""); setLoading(true); setError(null);
     try {
-      const { reply, emotion: e } = await sendChat(mode, text, messages);
+      const request = mode === "mentor" ? mentorMessage(text, styleId, journal.cases.find((c) => c.id === caseId), journal.reviews) : text;
+      const { reply, emotion: e } = await sendChat(mode, request, messages);
       setMessages([...next, { id: crypto.randomUUID(), role: "assistant", content: reply, emotion: e }]);
       setEmotion(e ?? "neutral");
     } catch {
       setError("I can’t reach the local AI right now. Check that Express and Ollama are running, then try again.");
       setEmotion("sad");
-    } finally { setLoading(false); }
+    } finally { setLoading(false); composerRef.current?.focus({ preventScroll: true }); }
   }
 
   function toggleVoice() {
@@ -100,12 +110,7 @@ export function ChatScreen({ mode }: { mode: Mode }) {
   return (
     <div ref={layoutRef} data-mode={mode} className="dessert-layout mx-auto grid max-w-7xl gap-3 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-6 lg:p-6 xl:grid-cols-[360px_minmax(0,1fr)]">
       <aside className="dessert-profile glass flex min-w-0 flex-col items-center rounded-3xl p-3 sm:p-4 lg:p-6">
-        <nav className="grid w-full grid-cols-2 gap-1 rounded-full bg-muted/60 p-1 text-sm" aria-label="Modes">
-          {([["/", "Companion"], ["/mentor", "Medical Mentor"]] as const).map(([to, label]) => (
-             <Link key={to} to={to} className="min-w-0 rounded-full px-2 py-2 text-center text-xs text-muted-foreground transition-colors hover:text-foreground sm:text-sm"
-              activeProps={{ className: "bg-primary text-primary-foreground hover:text-primary-foreground glow" }} activeOptions={{ exact: true }}>{label}</Link>
-          ))}
-        </nav>
+        <WorkspaceNav />
         <div className="dessert-identity grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center justify-center gap-2 lg:flex lg:flex-1 lg:flex-col lg:gap-0 lg:py-6">
           <Avatar emotion={displayEmotion} mode={mode} size={260} greeting={mode === "companion" ? {
             sessionId: session.id, claim: claimCompanionGreeting,
@@ -134,11 +139,19 @@ export function ChatScreen({ mode }: { mode: Mode }) {
             recRef.current?.stop(); setListening(false); setError(null); setGreetingVisible(false); newCompanionSession();
           }}><MessageSquarePlus /></Button>}
         </header>
+        {mode === "mentor" && <div className="dessert-mentor-options grid shrink-0 gap-3 border-b bg-online/5 px-4 py-3 sm:grid-cols-2 sm:px-6">
+          <div className="min-w-0 space-y-2"><Label htmlFor="mentor-case" className="text-xs text-muted-foreground">Discuss a saved case (optional)</Label><Select value={journal.cases.some((c) => c.id === caseId) ? caseId : "none"} onValueChange={setCaseId} disabled={loading}><SelectTrigger id="mentor-case"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">New discussion / no specific case</SelectItem>{journal.cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent></Select></div>
+          <div className="min-w-0 space-y-2"><Label htmlFor="response-style" className="text-xs text-muted-foreground">Response style</Label><Select value={styleId} onValueChange={setStyleId} disabled={loading}><SelectTrigger id="response-style"><SelectValue /></SelectTrigger><SelectContent>{RESPONSE_STYLES.map((s) => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}</SelectContent></Select></div>
+          {journal.error && <p role="alert" className="text-xs text-destructive sm:col-span-2">{journal.error}</p>}
+        </div>}
         <div ref={threadRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-6" role="log" aria-label="Conversation" aria-live="polite">
           {messages.length === 0 && !loading && (
             <div className="dessert-empty flex h-full flex-col items-center justify-center text-center animate-rise">
               <p className="font-display text-2xl italic sm:text-3xl">{c.empty}</p>
               <p className="mt-2 max-w-sm text-sm text-muted-foreground">{c.hint}</p>
+              <div className="mt-5 flex max-w-lg flex-wrap justify-center gap-2">
+                {(mode === "companion" ? ["How was your day?", "Help me focus on studying", "Let’s have a little chat"] : ["Help me build a differential diagnosis", "What important findings are missing?", "Help me review a diagnostic mistake"]).map((prompt) => <Button key={prompt} type="button" variant="outline" className="h-auto max-w-full whitespace-normal text-xs" onClick={() => { setInput(prompt); composerRef.current?.focus({ preventScroll: true }); }}>{prompt}<ArrowUpRight className="size-3 shrink-0" /></Button>)}
+              </div>
             </div>
           )}
           {messages.map((m) => (
