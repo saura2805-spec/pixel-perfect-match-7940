@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ChatScreen } from "@/components/dessert/ChatScreen";
 
 export const Route = createFileRoute("/mentor")({
+  validateSearch: (search: Record<string, unknown>): { caseId?: string } => typeof search["caseId"] === "string" ? { caseId: search["caseId"] } : {},
   head: () => ({
     meta: [
       { title: "Dessert — Medical Mentor" },
@@ -12,5 +13,10 @@ export const Route = createFileRoute("/mentor")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => <ChatScreen mode="mentor" />,
+  component: MentorPage,
 });
+
+function MentorPage() {
+  const { caseId } = Route.useSearch();
+  return <ChatScreen mode="mentor" selectedCaseId={caseId} />;
+}
