@@ -123,10 +123,10 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
       const hair = new T.Mesh(new T.SphereGeometry(1.08, 48, 48, 0, Math.PI * 2, 0, Math.PI * 0.42), hairM);
       hair.rotation.x = -0.3; head.add(hair);
       const back = new T.Mesh(new T.CapsuleGeometry(0.95, 1.3, 12, 32), hairM);
-      back.scale.set(1.18, 1, 0.55); back.position.set(0, -0.75, -0.5); head.add(back);
+      back.scale.set(1.3, 1, 0.6); back.position.set(0, -0.7, -0.45); head.add(back);
       for (const side of [-1, 1]) {
-        const lock = new T.Mesh(new T.CapsuleGeometry(0.26, 1.35, 8, 20), hairM);
-        lock.scale.set(1, 1, 0.75); lock.position.set(side * 0.98, -0.75, 0.05); lock.rotation.z = side * 0.12; head.add(lock);
+        const lock = new T.Mesh(new T.CapsuleGeometry(0.32, 1.3, 8, 20), hairM);
+        lock.scale.set(1, 1, 0.75); lock.position.set(side * 0.92, -0.7, -0.02); lock.rotation.z = side * 0.08; head.add(lock);
         const curl = new T.Mesh(new T.SphereGeometry(0.28, 16, 12), hairM);
         curl.scale.set(1.1, 0.7, 0.8); curl.position.set(side * 1.08, -1.5, 0.05); head.add(curl);
       }
