@@ -25,7 +25,7 @@ const copy: Record<Mode, { title: string; empty: string; hint: string; placehold
 export function ChatScreen({ mode, selectedCaseId }: { mode: Mode; selectedCaseId?: string }) {
   const journal = useDessertJournal();
   const [caseId, setCaseId] = useState(selectedCaseId ?? "none");
-  const [styleId, setStyleId] = useState("detailed");
+  const [styleId, setStyleId] = useState("quick");
   useEffect(() => { setCaseId(selectedCaseId ?? "none"); }, [selectedCaseId]);
   const { session, update } = useChatSession(mode);
   const { messages, input, emotion } = session;
