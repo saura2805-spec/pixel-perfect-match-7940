@@ -59,9 +59,9 @@ export function JournalScreen({ learning = false }: { learning?: boolean }) {
         </form>
         <div className="space-y-4">
           {count === 0 && <div className="border-t py-8 text-muted-foreground">{learning ? <History className="mb-3 size-6" /> : <BookOpen className="mb-3 size-6" />}<p>{learning ? "No learning reviews yet." : "No saved cases yet."}</p></div>}
-          {learning ? journal.reviews.map((r) => <article key={r.id} className="rounded-lg border bg-card/60 p-5">
-            <RecordHeader date={r.createdAt} onDelete={() => { if (window.confirm("Delete this learning review?")) journal.deleteReview(r.id); }} />
-            <h3 className="mt-3 break-words text-lg font-semibold">{r.initialDiagnosis}</h3>
+          {learning ? journal.reviews.map((r, i) => <article key={r.id} className="rounded-2xl border bg-card/60 p-5 text-center sm:p-6">
+            <RecordHeader number={journal.reviews.length - i} date={r.createdAt} onDelete={() => { if (window.confirm("Delete this learning review?")) journal.deleteReview(r.id); }} />
+            <h3 className="mt-5 break-words text-lg font-semibold">{r.initialDiagnosis}</h3>
             {r.caseId && <p className="mt-1 text-xs text-primary">{journal.cases.find((c) => c.id === r.caseId)?.title}</p>}
             <Detail label="Revised diagnosis" value={r.revisedDiagnosis} /><Detail label="Missed clue / error" value={r.error} />
             <Lesson label="Lesson to remember" text={r.lesson} />
@@ -77,8 +77,8 @@ export function JournalScreen({ learning = false }: { learning?: boolean }) {
     </main>
   </div>;
 }
-function RecordHeader({ date, onDelete }: { date: string; onDelete: () => void }) {
-  return <div className="flex items-center justify-between gap-2"><time dateTime={date} className="text-xs text-muted-foreground">{date.slice(0, 10)}</time><Button variant="ghost" size="icon" aria-label="Delete record" title="Delete record" onClick={onDelete}><Trash2 className="size-4" /></Button></div>;
+function RecordHeader({ number, date, onDelete }: { number: number; date: string; onDelete: () => void }) {
+  return <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>REVIEW #{number}</span><div className="flex items-center gap-1"><time dateTime={date}>{date.slice(0, 19).replace("T", " ")}</time><Button variant="ghost" size="icon" aria-label="Delete record" title="Delete record" onClick={onDelete}><Trash2 className="size-4" /></Button></div></div>;
 }
-function Detail({ label, value }: { label: string; value: string }) { return <dl className="mt-4 border-t pt-3 text-sm"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{value}</dd></dl>; }
-function Lesson({ label, text }: { label: string; text: string }) { return <div className="mt-4 border-l-2 border-online bg-online/10 p-3"><h4 className="text-xs font-semibold text-online">{label}</h4><p className="mt-2 whitespace-pre-wrap break-words text-sm">{text}</p></div>; }
+function Detail({ label, value }: { label: string; value: string }) { return <dl className="mt-4 grid gap-2 border-t py-4 text-sm sm:grid-cols-[1fr_2fr] sm:gap-4"><dt className="font-medium text-muted-foreground">{label}</dt><dd className="whitespace-pre-wrap break-words text-muted-foreground">{value}</dd></dl>; }
+function Lesson({ label, text }: { label: string; text: string }) { return <div className="mt-4 rounded-xl border border-online/30 bg-online/10 p-5"><h4 className="text-sm font-semibold text-online">{label}</h4><p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{text}</p></div>; }
