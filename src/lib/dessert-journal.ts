@@ -8,9 +8,9 @@ export type ClinicalCase = z.infer<typeof caseSchema>;
 export type LearningReview = z.infer<typeof reviewSchema>;
 export type Journal = z.infer<typeof journalSchema>;
 export const RESPONSE_STYLES = [
+  { id: "quick", label: "Quick Study — concise revision", instruction: "Respond as a quick-study revision: concise, high-yield key points and next steps." },
   { id: "detailed", label: "Detailed MBBS — full explanation", instruction: "Give a detailed MBBS-level explanation, including the differential and evidence for and against it." },
-  { id: "concise", label: "Concise — key clinical points", instruction: "Respond concisely with the key clinical points and next steps." },
-  { id: "socratic", label: "Socratic — guide with questions", instruction: "Use a Socratic teaching style, asking focused questions to guide clinical reasoning." },
+  { id: "clinical", label: "Clinical Case — structured reasoning", instruction: "Use structured clinical case reasoning: history, examination, differential, investigations, and management." },
 ] as const;
 
 export function mentorMessage(message: string, styleId: string, selectedCase: ClinicalCase | undefined, reviews: LearningReview[]) {

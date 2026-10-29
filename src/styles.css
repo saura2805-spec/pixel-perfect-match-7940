@@ -74,19 +74,20 @@
   --avatar-shadow: #3a1f3a;
   --avatar-key: #ffd1e3;
   --avatar-rim: #b9a3ff;
-  --avatar-dress: #b59ad6;
-  --avatar-collar: #fff1f6;
-  --avatar-skin: #ffe0d6;
-  --avatar-hair: #c58bd0;
-  --avatar-bow: #ff8fb8;
-  --avatar-eye: #3b1e4a;
+  --avatar-dress: #ece6dc;
+  --avatar-collar: #f3eee6;
+  --avatar-skin: #f6d2b8;
+  --avatar-hair: #3d2f2a;
+  --avatar-bow: #4a4a50;
+  --avatar-eye: #1c120d;
   --avatar-shine: #ffffff;
-  --avatar-blush: #ff8fb0;
-  --avatar-mouth: #8a3550;
-  --avatar-sclera: #fff5f0;
-  --avatar-iris: #82558c;
-  --avatar-hair-detail: #ad72b9;
-  --avatar-nail: #f9d0ce;
+  --avatar-blush: #f29a8e;
+  --avatar-mouth: #d9404a;
+  --avatar-sclera: #fbf7f2;
+  --avatar-iris: #6b3d1f;
+  --avatar-hair-detail: #574238;
+  --avatar-nail: #f2c4b0;
+  --avatar-freckle: #c98a6a;
 }
 
 @layer base {

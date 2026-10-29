@@ -17,13 +17,14 @@ describe("Clinical journal rules", () => {
   });
   it("sends selected case and linked lessons with the chosen response style", () => {
     const reviews = [{ id: "r", createdAt: record.createdAt, caseId: record.id, initialDiagnosis: "Viral", revisedDiagnosis: "Undetermined", error: "Anchoring", lesson: "Check discriminating findings" }, { id: "other", createdAt: record.createdAt, caseId: "other", initialDiagnosis: "Other", revisedDiagnosis: "Other", error: "Other", lesson: "Unrelated lesson" }];
-    const result = mentorMessage("What next?", "socratic", record, reviews);
-    expect(result).toContain("Socratic");
+    const result = mentorMessage("What next?", "clinical", record, reviews);
+    expect(result).toContain("structured clinical case reasoning");
     expect(result).toContain("Five days of fever");
     expect(result).toContain("Check discriminating findings");
     expect(result).not.toContain("Unrelated lesson");
     expect(result).toContain("Current question: What next?");
-    expect(mentorMessage("Hello", "concise", undefined, reviews)).not.toContain("Five days of fever");
+    expect(mentorMessage("Hello", "quick", undefined, reviews)).not.toContain("Five days of fever");
+    expect(mentorMessage("Hello", "quick", undefined, reviews)).toContain("quick-study");
   });
 });
 describe("Browser-local saves", () => {

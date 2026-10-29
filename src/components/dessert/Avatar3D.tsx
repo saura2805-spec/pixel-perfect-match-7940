@@ -66,8 +66,10 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
       body.position.y = -1.05; root.add(body);
       const neck = new T.Mesh(new T.CapsuleGeometry(0.21, 0.17, 6, 16), skinMaterial);
       neck.position.set(0, -0.42, 0.05); root.add(neck);
-      const collar = new T.Mesh(new T.TorusGeometry(0.42, 0.08, 12, 32), mat("collar"));
-      collar.rotation.x = Math.PI / 2; collar.position.y = -0.48; root.add(collar);
+      const collar = new T.Mesh(new T.CylinderGeometry(0.27, 0.32, 0.26, 32, 1, true), dressMaterial);
+      collar.position.set(0, -0.5, 0.03); root.add(collar);
+      const collarRoll = new T.Mesh(new T.TorusGeometry(0.29, 0.05, 12, 32), dressMaterial);
+      collarRoll.rotation.x = Math.PI / 2; collarRoll.position.set(0, -0.4, 0.03); root.add(collarRoll);
 
       // Jointed sleeves and hands extend the same character, without external assets.
       const arms = new T.Group(); root.add(arms);
@@ -115,24 +117,23 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
       for (const side of [-1, 1]) {
         const ear = new T.Mesh(new T.SphereGeometry(0.16, 16, 12), skinMaterial);
         ear.scale.set(0.7, 1.2, 0.6); ear.position.set(side * 0.96, -0.08, 0.06); head.add(ear);
-        const earring = new T.Mesh(new T.SphereGeometry(0.04, 12, 8), mat("bow", 0.3));
-        earring.position.set(side * 0.98, -0.23, 0.14); head.add(earring);
       }
-      const hairM = mat("hair", 0.45);
-      const hair = new T.Mesh(new T.SphereGeometry(1.08, 48, 48, 0, Math.PI * 2, 0, Math.PI * 0.55), hairM);
-      hair.rotation.x = -0.35; head.add(hair);
-      const back = new T.Mesh(new T.SphereGeometry(1.05, 32, 32), hairM);
-      back.scale.set(1.05, 1.25, 0.8); back.position.set(0, -0.35, -0.35); head.add(back);
+      // Long, centre-parted dark hair falling past the shoulders.
+      const hairM = mat("hair", 0.5);
+      const hair = new T.Mesh(new T.SphereGeometry(1.08, 48, 48, 0, Math.PI * 2, 0, Math.PI * 0.42), hairM);
+      hair.rotation.x = -0.3; head.add(hair);
+      const back = new T.Mesh(new T.CapsuleGeometry(0.95, 1.3, 12, 32), hairM);
+      back.scale.set(1.3, 1, 0.6); back.position.set(0, -0.7, -0.45); head.add(back);
+      for (const side of [-1, 1]) {
+        const lock = new T.Mesh(new T.CapsuleGeometry(0.32, 1.3, 8, 20), hairM);
+        lock.scale.set(1, 1, 0.75); lock.position.set(side * 0.92, -0.7, -0.02); lock.rotation.z = side * 0.08; head.add(lock);
+        const curl = new T.Mesh(new T.SphereGeometry(0.28, 16, 12), hairM);
+        curl.scale.set(1.1, 0.7, 0.8); curl.position.set(side * 1.08, -1.5, 0.05); head.add(curl);
+      }
       const strandMaterial = mat("hair-detail", 0.55);
-      for (let i = -3; i <= 3; i++) {
-        const points = [new T.Vector3(i * 0.13, 1.04, 0.26), new T.Vector3(i * 0.19 + 0.07, 0.82, 0.77), new T.Vector3(i * 0.23 + 0.09, 0.48 + Math.abs(i) * 0.035, 0.94)];
-        head.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points), 12, 0.025, 6, false), strandMaterial));
-      }
-      for (const x of [-1, 1]) {
-        const bun = new T.Mesh(new T.SphereGeometry(0.32, 24, 24), hairM);
-        bun.position.set(x * 0.75, 0.8, -0.1); head.add(bun);
-        const bow = new T.Mesh(new T.ConeGeometry(0.12, 0.25, 12), mat("bow"));
-        bow.position.set(x * 0.9, 1.0, 0.1); bow.rotation.z = x * 1.2; head.add(bow);
+      for (const side of [-1, 1]) for (let i = 0; i < 4; i++) {
+        const points = [new T.Vector3(side * 0.04, 1.06, 0.3), new T.Vector3(side * (0.35 + i * 0.12), 0.86 - i * 0.05, 0.72 - i * 0.08), new T.Vector3(side * (0.78 + i * 0.07), 0.25 - i * 0.12, 0.55 - i * 0.1), new T.Vector3(side * (0.98 + i * 0.03), -0.9 - i * 0.12, 0.25)];
+        head.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points), 20, 0.03, 6, false), strandMaterial));
       }
 
       const eyes: InstanceType<typeof T.Group>[] = [];
@@ -150,11 +151,22 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
         shine.scale.setScalar(0.7); shine.position.set(0.03, 0.04, 0.125); eye.add(shine);
         head.add(eye); eyes.push(eye);
         const brow = new T.Mesh(new T.CapsuleGeometry(0.018, 0.17, 4, 8), hairM);
-        brow.position.set(x * 0.36, 0.29, 0.97); brow.rotation.z = Math.PI / 2;
+        brow.position.set(x * 0.36, 0.37, 0.95); brow.rotation.z = Math.PI / 2;
         head.add(brow); brows.push(brow);
         const cheek = new T.Mesh(new T.CircleGeometry(0.14, 24), new T.MeshBasicMaterial({ color: color("blush"), transparent: true, opacity: 0.4 }));
         cheek.position.set(x * 0.55, -0.2, 0.84); cheek.rotation.y = x * 0.55; head.add(cheek); cheeks.push(cheek);
+        // Round dark-framed glasses and light freckles, as in the reference.
+        const lens = new T.Mesh(new T.TorusGeometry(0.27, 0.035, 12, 40), mat("bow", 0.35));
+        lens.position.set(x * 0.38, 0.02, 1.0); lens.rotation.y = x * 0.28; head.add(lens);
+        const temple = new T.Mesh(new T.CapsuleGeometry(0.022, 0.6, 4, 8), mat("bow", 0.35));
+        temple.rotation.x = Math.PI / 2; temple.position.set(x * 0.9, 0.06, 0.62); temple.rotation.z = x * 0.15; head.add(temple);
+        for (let f = 0; f < 4; f++) {
+          const freckle = new T.Mesh(new T.CircleGeometry(0.012, 8), mat("freckle", 0.8));
+          freckle.position.set(x * (0.12 + f * 0.05), -0.12 - (f % 2) * 0.04, 0.99 - f * 0.02); freckle.rotation.y = x * 0.2; head.add(freckle);
+        }
       }
+      const bridge = new T.Mesh(new T.CapsuleGeometry(0.018, 0.12, 4, 8), mat("bow", 0.35));
+      bridge.rotation.z = Math.PI / 2; bridge.position.set(0, 0.08, 1.04); head.add(bridge);
       const mouth = new T.Mesh(new T.TorusGeometry(0.13, 0.025, 8, 24, Math.PI), mat("mouth"));
       mouth.position.set(0, -0.32, 0.95); head.add(mouth);
       const openMouth = new T.Mesh(new T.CircleGeometry(0.11, 24), mat("mouth"));
@@ -204,9 +216,10 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
         root.rotation.y = wave.turn;
         const hands = [joints.left, joints.right];
         shoulders.forEach((shoulder, i) => { const hand = hands[i]; if (!hand) return; shoulder.rotation.set(hand.forward, 0, hand.shoulder); });
-        elbows.forEach((elbow, i) => { const hand = hands[i]; if (hand) elbow.rotation.z = hand.elbow; });
+        // Elbows flex forward (never hyperextend backward); sideways bend only once the arm is raised.
+        elbows.forEach((elbow, i) => { const hand = hands[i]; if (!hand) return; const raised = Math.min(Math.abs(hand.shoulder) / 1.1, 1); elbow.rotation.set(-Math.abs(hand.elbow) * (1 - raised * 0.6), 0, hand.elbow * raised * 0.85); });
         wrists.forEach((wrist, i) => { const hand = hands[i]; if (hand) wrist.rotation.set(0, hand.palm, hand.wrist); });
-        fingers.forEach((handFingers, i) => { const hand = hands[i]; if (hand) handFingers.forEach((finger) => { finger.rotation.x = hand.curl; }); });
+        fingers.forEach((handFingers, i) => { const hand = hands[i]; if (hand) handFingers.forEach((finger) => { finger.rotation.x = -Math.abs(hand.curl); }); });
         el.dataset["gestureMode"] = context.current.mode;
         el.dataset["handPose"] = context.current.emotion;
         head.rotation.z = cur.tilt + idle * Math.sin(t * 0.7) * 0.025;
@@ -215,7 +228,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
         let blink = 1;
         if (!motion.matches && t > nextBlink) { const d = t - nextBlink; blink = d < 0.22 ? Math.abs(1 - d / 0.11) : 1; if (d > 0.22) nextBlink = t + 3 + Math.random() * 4; }
         eyes.forEach((e) => e.scale.set(1, Math.max(0.05, cur.eye * blink), 1));
-        brows.forEach((b, i) => { b.rotation.z = Math.PI / 2 + (i === 0 ? -1 : 1) * cur.brow; b.position.y = 0.29 + Math.abs(cur.brow) * 0.13; });
+        brows.forEach((b, i) => { b.rotation.z = Math.PI / 2 + (i === 0 ? -1 : 1) * cur.brow; b.position.y = 0.37 + Math.abs(cur.brow) * 0.1; });
         const s = cur.smile;
         mouth.rotation.z = s >= 0 ? Math.PI : 0;
         mouth.scale.set(0.6 + Math.abs(s) * 0.6, 0.3 + Math.abs(s) * 0.9, 1);
