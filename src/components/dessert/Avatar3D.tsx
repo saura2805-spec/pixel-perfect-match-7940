@@ -108,8 +108,8 @@ export function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion
       if (chestBone) {
         const collarMat = new THREE.MeshToonMaterial({ color: getComputedStyle(el).getPropertyValue("--avatar-collar").trim() || "#fbf5ea" });
         for (const side of [-1, 1]) {
-          const flap = new THREE.Mesh(new THREE.CircleGeometry(0.06, 24, 0, Math.PI), collarMat);
-          flap.scale.set(1, 0.7, 1); flap.rotation.set(-0.35, Math.PI, side * 1.15); flap.position.set(side * 0.045, 0.1, -0.075);
+          const flap = new THREE.Mesh(new THREE.SphereGeometry(0.06, 24, 12, 0, Math.PI), collarMat);
+          flap.scale.set(1, 0.7, 0.15); flap.rotation.set(-0.35, Math.PI, side * 1.15); flap.position.set(side * 0.045, 0.1, -0.075);
           chestBone.add(flap);
           Object.assign(window as object, import.meta.env.DEV ? { ["__dessertCollar" + (side > 0 ? "R" : "L")]: flap } : {});
         }
