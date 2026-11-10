@@ -48,7 +48,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
       const loader = new GLTFLoader(); loader.register((p) => new VRMLoaderPlugin(p));
       const gltf = await loader.loadAsync(modelAsset.url);
       if (disposed) return;
-      const vrm = gltf.userData.vrm;
+      const vrm = gltf.userData["vrm"] as import("@pixiv/three-vrm").VRM;
       VRMUtils.rotateVRM0(vrm);
       const tex = await new THREE.TextureLoader().loadAsync(skinUrl);
       tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace;
