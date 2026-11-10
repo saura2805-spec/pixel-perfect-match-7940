@@ -6,15 +6,15 @@ import modelAsset from "@/assets/dessert-base.vrm.asset.json";
 import skinUrl from "@/assets/dessert-skin.webp";
 
 type Greeting = { sessionId: number; claim: (id: number) => boolean; onStart: () => void; onEnd: () => void };
-type Props = { emotion?: Emotion; mode?: Mode; size?: number; greeting?: Greeting | undefined };
+type Props = { intensity?: number; emotion?: Emotion; mode?: Mode; size?: number; greeting?: Greeting | undefined };
 
 // Interactive VRM Dessert: real facial expressions + humanoid bones, drag to turn her.
-export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: Props) {
+export function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion", greeting }: Props) {
   const mount = useRef<HTMLDivElement>(null);
-  const live = useRef({ emotion, mode, greetStart: -1 });
+  const live = useRef({ emotion, mode, intensity, greetStart: -1 });
   const [ready, setReady] = useState(false);
   const [waving, setWaving] = useState(false);
-  live.current.emotion = emotion; live.current.mode = mode;
+  live.current.emotion = emotion; live.current.mode = mode; live.current.intensity = intensity;
 
   const sessionId = greeting?.sessionId;
   useEffect(() => {
@@ -113,7 +113,8 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         const g = live.current.greetStart >= 0 && !reduced ? waveOverlay((now - live.current.greetStart) / 1000, GREETING_DURATION) : { weight: 0, wave: 0 };
         const em = vrm.expressionManager;
         if (em) {
-          const f = pose.face, gw = g.weight;
+          const gw = g.weight, sc = 0.55 + 0.45 * live.current.intensity;
+          const f = Object.fromEntries(Object.entries(pose.face).map(([k, v]) => [k, v * sc])) as typeof pose.face;
           em.setValue("happy", Math.max(f.happy, gw)); em.setValue("sad", f.sad * (1 - gw)); em.setValue("relaxed", f.relaxed * (1 - gw));
           em.setValue("surprised", f.surprised); em.setValue("angry", f.angry); em.setValue("lookUp", f.lookUp); em.setValue("lookDown", f.lookDown);
           em.setValue("oh", f.oh); em.setValue("aa", f.aa + (reduced ? 0 : Math.max(0, Math.sin(t * 0.7)) * f.aa * 0.5));
