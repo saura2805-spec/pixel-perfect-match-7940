@@ -162,3 +162,19 @@
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+.dessert-portrait { aspect-ratio: 4 / 5; }
+.dessert-portrait-glow { position: absolute; inset: 15% 10% 5%; border-radius: 9999px; background: radial-gradient(circle, color-mix(in oklab, var(--primary) 35%, transparent), transparent 70%); filter: blur(18px); }
+.dessert-portrait-img { position: absolute; inset: 0; height: 100%; width: 100%; object-fit: contain; filter: drop-shadow(0 12px 18px rgb(0 0 0 / .35)); transition: opacity .5s ease, transform .8s cubic-bezier(.3,1.4,.5,1); transform-origin: 50% 90%; animation: dessert-breathe 4.5s ease-in-out infinite; }
+.dessert-portrait-img[data-visible="false"] { opacity: 0; }
+.dessert-portrait-wave[data-visible="true"] { animation: dessert-hello 1.2s ease-in-out 3; }
+.dessert-portrait[data-emotion="happy"] .dessert-portrait-img { rotate: 2deg; }
+.dessert-portrait[data-emotion="excited"] .dessert-portrait-img { animation: dessert-bounce .9s ease-in-out infinite; }
+.dessert-portrait[data-emotion="affectionate"] .dessert-portrait-img { rotate: 4deg; scale: 1.02; }
+.dessert-portrait[data-emotion="sad"] .dessert-portrait-img { rotate: -3deg; scale: .97; filter: drop-shadow(0 12px 18px rgb(0 0 0 / .35)) saturate(.75); }
+.dessert-portrait[data-emotion="thinking"] .dessert-portrait-img { rotate: -4deg; }
+.dessert-portrait[data-emotion="listening"] .dessert-portrait-img { rotate: 3deg; translate: 0 -2%; }
+@keyframes dessert-breathe { 0%,100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-2.5%) scaleY(1.01); } }
+@keyframes dessert-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5%); } }
+@keyframes dessert-hello { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) { .dessert-portrait-img { animation: none !important; transition: opacity .2s; } }
