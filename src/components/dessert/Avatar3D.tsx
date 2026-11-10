@@ -85,7 +85,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
       glasses.position.set(0, 0.118, -0.17);
       Object.assign(window as object, import.meta.env.DEV ? { __dessertGlasses: glasses } : {});
 
-      const target = new THREE.Vector3(0, headPos.y - 0.03, 0);
+      const target = new THREE.Vector3(0, headPos.y + 0.04, 0);
       let yaw = 0, drag = false, lastX = 0;
       const down = (e: PointerEvent) => { drag = true; lastX = e.clientX; };
       const move = (e: PointerEvent) => { if (drag) { yaw = Math.max(-0.8, Math.min(0.8, yaw + (e.clientX - lastX) * 0.01)); lastX = e.clientX; } };
@@ -102,8 +102,8 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         const ua = bone(side + "UpperArm"), la = bone(side + "LowerArm"), hand = bone(side + "Hand");
         if (!ua || !la) return;
         const mix = (v: number, w: number) => v * (1 - lift) + w * lift;
-        ua.rotation.set(mix(a.forward, 0), 0, -s * mix(a.down, 0.35));
-        la.rotation.set(0, s * mix(a.elbow, 0.3), s * (mix(a.lift, 1.9) + wave));
+        ua.rotation.set(mix(a.forward, 0), 0, -s * mix(a.down, 1.1));
+        la.rotation.set(0, s * mix(a.elbow, 2.5), s * (mix(a.lift, 0.9) + wave));
         if (hand) hand.rotation.set(0, 0, s * wave * 0.5);
       };
       const loop = (now: number) => {
@@ -134,7 +134,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         setArm("left", pose.left);
         setArm("right", pose.right, g.wave, g.weight);
         vrm.update(dt);
-        camera.position.set(0, target.y + 0.01, 1.5); camera.lookAt(target);
+        camera.position.set(0, target.y + 0.01, 1.75); camera.lookAt(target);
         renderer.render(scene, camera);
         if (first) { first = false; setReady(true); }
       };
