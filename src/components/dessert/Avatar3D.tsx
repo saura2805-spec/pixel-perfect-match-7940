@@ -71,7 +71,7 @@ export function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion
         const inBun = (u: number, v: number) => (u > 0.755 && u < 0.885 && v > 0.04 && v < 0.16) || (u > 0.79 && u < 0.93 && v > 0.35 && v < 0.5);
         for (let i = 0; i < uv.count; i++) {
           if (!inBun(uv.getX(i), uv.getY(i)) || pos.getY(i) < headY + 0.18) continue;
-          pos.setXYZ(i, pos.getX(i) * 0.6, headY + 0.18 + (pos.getY(i) - headY - 0.18) * 0.15, pos.getZ(i) * 0.6);
+          pos.setXYZ(i, pos.getX(i) * 0.3, headY + 0.14, pos.getZ(i) * 0.3);
         }
         pos.needsUpdate = true;
       });
@@ -98,16 +98,6 @@ export function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion
       for (let i = 0; i < 13; i++) { const a = -1.5 + (i / 12) * 3; lock(a, 0.34 + Math.cos(a) * 0.06, 0.042); }
       for (const side of [-1, 1]) { lock(side * 1.25, 0.32, 0.036, 1); lock(side * 1.45, 0.3, 0.032, 1); }
       head.add(hair);
-      const chestBone = bone("upperChest") ?? bone("chest");
-      if (chestBone) {
-        const collarMat = new THREE.MeshToonMaterial({ color: getComputedStyle(el).getPropertyValue("--avatar-collar").trim() || "#fbf5ea" });
-        for (const side of [-1, 1]) {
-          const flap = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.01, 24, 1, false, 0, Math.PI), collarMat);
-          flap.scale.set(1, 1, 0.7); flap.rotation.set(Math.PI / 2 - 0.35, 0, side * 1.15 + Math.PI / 2); flap.position.set(side * 0.05, 0.1, -0.085);
-          chestBone.add(flap);
-          Object.assign(window as object, import.meta.env.DEV ? { ["__dessertCollar" + (side > 0 ? "R" : "L")]: flap } : {});
-        }
-      }
       scene.updateMatrixWorld(true);
       const headPos = head.getWorldPosition(new THREE.Vector3());
       glasses.position.set(0, 0.118, -0.17);
