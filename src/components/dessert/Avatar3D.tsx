@@ -93,7 +93,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         const ua = bone(side + "UpperArm"), la = bone(side + "LowerArm"), hand = bone(side + "Hand");
         if (!ua || !la) return;
         const downA = a.down * (1 - lift) + -0.2 * lift;
-        ua.rotation.set(0, s * a.forward * (1 - lift), s * downA);
+        ua.rotation.set(0, s * a.forward * (1 - lift), -s * downA);
         la.rotation.set(0, s * (a.elbow * (1 - lift) + 1.9 * lift), 0);
         la.rotation.x = -a.twist * (1 - lift);
         if (hand) hand.rotation.set(0, 0, s * wave);
@@ -121,11 +121,11 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         head.rotation.set(pose.headPitch + (reduced ? 0 : Math.sin(t * 0.9) * 0.02), (reduced ? 0 : Math.sin(t * 0.5) * 0.06) - g.weight * 0.15, pose.headRoll + (reduced ? 0 : Math.sin(t * 0.7) * 0.03) + g.weight * 0.1);
         if (neck) neck.rotation.x = pose.headPitch * 0.3;
         vrm.scene.position.y = reduced ? 0 : Math.sin(t * 2 * pose.speed) * 0.004 * pose.bob;
-        vrm.scene.rotation.y = yaw;
+        vrm.scene.rotation.y = yaw + Math.PI;
         setArm("left", pose.left);
         setArm("right", pose.right, g.wave, g.weight);
         vrm.update(dt);
-        camera.position.set(0, target.y + 0.02, 1.15); camera.lookAt(target);
+        camera.position.set(0, target.y + 0.02, 1.7); camera.lookAt(target);
         renderer.render(scene, camera);
         if (first) { first = false; setReady(true); }
       };
