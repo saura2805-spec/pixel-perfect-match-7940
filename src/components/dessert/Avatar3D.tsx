@@ -6,6 +6,7 @@ import modelAsset from "@/assets/dessert-base.vrm.asset.json";
 import skinUrl from "@/assets/dessert-skin.webp";
 
 type Greeting = { sessionId: number; claim: (id: number) => boolean; onStart: () => void; onEnd: () => void };
+const FWD = -1;
 type Props = { emotion?: Emotion; mode?: Mode; size?: number; greeting?: Greeting | undefined };
 
 // Interactive VRM Dessert: real facial expressions + humanoid bones, drag to turn her.
@@ -102,7 +103,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         const ua = bone(side + "UpperArm"), la = bone(side + "LowerArm"), hand = bone(side + "Hand");
         if (!ua || !la) return;
         const downA = a.down * (1 - lift) + -0.2 * lift;
-        ua.rotation.set(0, s * a.forward * (1 - lift), -s * downA);
+        ua.rotation.set(FWD * a.forward * (1 - lift), 0, -s * downA);
         la.rotation.set(0, s * (a.elbow * (1 - lift) + 1.9 * lift), 0);
         la.rotation.x = -a.twist * (1 - lift);
         if (hand) hand.rotation.set(0, 0, s * wave);
@@ -124,11 +125,11 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         }
         const breathe = reduced ? 0 : Math.sin(t * 1.6 * pose.speed);
         const spine = bone("spine"), chest = bone("chest") ?? bone("upperChest");
-        if (spine) spine.rotation.x = pose.spine + breathe * 0.012 * pose.bob;
+        if (spine) spine.rotation.x = -pose.spine + breathe * 0.012 * pose.bob;
         if (chest) chest.rotation.x = breathe * 0.01;
         const neck = bone("neck");
-        head.rotation.set(pose.headPitch + (reduced ? 0 : Math.sin(t * 0.9) * 0.02), (reduced ? 0 : Math.sin(t * 0.5) * 0.06) - g.weight * 0.15, pose.headRoll + (reduced ? 0 : Math.sin(t * 0.7) * 0.03) + g.weight * 0.1);
-        if (neck) neck.rotation.x = pose.headPitch * 0.3;
+        head.rotation.set(-pose.headPitch + (reduced ? 0 : Math.sin(t * 0.9) * 0.02), (reduced ? 0 : Math.sin(t * 0.5) * 0.06) - g.weight * 0.15, pose.headRoll + (reduced ? 0 : Math.sin(t * 0.7) * 0.03) + g.weight * 0.1);
+        if (neck) neck.rotation.x = -pose.headPitch * 0.3;
         vrm.scene.position.y = reduced ? 0 : Math.sin(t * 2 * pose.speed) * 0.004 * pose.bob;
         vrm.scene.rotation.y = yaw + Math.PI;
         setArm("left", pose.left);
