@@ -18,12 +18,12 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
 
   const sessionId = greeting?.sessionId;
   useEffect(() => {
-    if (!greeting || !greeting.claim(greeting.sessionId)) return;
+    if (!ready || !greeting || !greeting.claim(greeting.sessionId)) return;
     greeting.onStart(); setWaving(true); live.current.greetStart = performance.now();
     const t = window.setTimeout(() => { setWaving(false); greeting.onEnd(); }, GREETING_DURATION * 1000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+  }, [sessionId, ready]);
 
   useEffect(() => {
     if (import.meta.env.DEV) (window as unknown as { __dessert?: unknown }).__dessert = { setEmotion: (e: Emotion) => { live.current.emotion = e; } };
