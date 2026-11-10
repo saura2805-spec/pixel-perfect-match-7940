@@ -135,7 +135,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         setArm("left", pose.left);
         setArm("right", pose.right, g.wave, g.weight);
         const dbg = (window as unknown as { __dessertArm?: { x: number; y: number; z: number } }).__dessertArm;
-        if (import.meta.env.DEV && dbg) { const la = bone("rightLowerArm"); bone("rightUpperArm")!.rotation.set(0, 0, -1.2); la!.rotation.set(dbg.x, dbg.y, dbg.z); }
+        if (import.meta.env.DEV && dbg) { const la = bone("rightLowerArm"); bone("rightUpperArm")!.rotation.set(dbg.x, 0, -1.1); la!.rotation.set(0, dbg.y, dbg.z); }
         vrm.update(dt);
         camera.position.set(0, target.y + 0.02, 1.95); camera.lookAt(target);
         renderer.render(scene, camera);
