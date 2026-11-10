@@ -9,7 +9,7 @@ type Lexicon = Partial<Record<Emotion, [string, number][]>>;
 
 // Weighted cues: words/phrases (matched on word boundaries) and emoji.
 const LEX: Lexicon = {
-  happy: [["happy", 2], ["glad", 2], ["good day", 2], ["nice", 1], ["great", 1.5], ["good", 1], ["smile", 1.5], ["enjoyed", 2], ["fun", 1.5], ["😊", 2], ["🙂", 1]],
+  happy: [["happy", 2], ["glad", 2], ["good day", 2], ["nice", 1], ["great", 1.5], ["good", 1], ["smile", 1.5], ["hey", 1.5], ["hello", 1.5], ["hii", 1.5], ["how are you", 1.5], ["enjoyed", 2], ["fun", 1.5], ["😊", 2], ["🙂", 1]],
   excited: [["excited", 3], ["can't wait", 3], ["cant wait", 3], ["amazing", 2], ["awesome", 2], ["yay", 2.5], ["finally", 1.5], ["cleared", 2.5], ["got selected", 3], ["got in", 2.5], ["🎉", 2.5], ["🤩", 3]],
   laughing: [["haha", 3], ["hahaha", 3.5], ["lol", 2.5], ["lmao", 3], ["hehe", 2], ["funny", 2], ["hilarious", 3], ["joke", 1.5], ["😂", 3.5], ["🤣", 3.5]],
   affectionate: [["love you", 4], ["miss you", 3.5], ["hug", 2.5], ["cuddle", 3], ["thank you", 2], ["thanks", 1.5], ["you're the best", 3], ["sweet", 1.5], ["💜", 3], ["❤️", 3], ["🥰", 3.5]],
