@@ -48,30 +48,43 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
       const root = new T.Group(); scene.add(root);
       const head = new T.Group(); head.position.y = 0.55; root.add(head);
 
-      const fabricCanvas = document.createElement("canvas"); fabricCanvas.width = 64; fabricCanvas.height = 64;
+      // Pink gingham plaid, Peter Pan collar and flared skirt, as in the reference.
+      const fabricCanvas = document.createElement("canvas"); fabricCanvas.width = 128; fabricCanvas.height = 128;
       const fabricContext = fabricCanvas.getContext("2d");
       if (fabricContext) {
-        fabricContext.fillStyle = color("dress"); fabricContext.fillRect(0, 0, 64, 64);
-        fabricContext.globalAlpha = 0.12; fabricContext.strokeStyle = color("collar");
-        for (let i = 0; i < 64; i += 3) {
-          fabricContext.beginPath(); fabricContext.moveTo(i, 0); fabricContext.lineTo(i, 64); fabricContext.stroke();
-          fabricContext.beginPath(); fabricContext.moveTo(0, i); fabricContext.lineTo(64, i); fabricContext.stroke();
+        fabricContext.fillStyle = color("dress"); fabricContext.fillRect(0, 0, 128, 128);
+        fabricContext.fillStyle = color("plaid"); fabricContext.globalAlpha = 0.45;
+        fabricContext.fillRect(0, 0, 128, 40); fabricContext.fillRect(0, 0, 40, 128);
+        fabricContext.globalAlpha = 0.7; fabricContext.strokeStyle = color("plaid-line"); fabricContext.lineWidth = 2;
+        for (const v of [20, 84]) {
+          fabricContext.beginPath(); fabricContext.moveTo(v, 0); fabricContext.lineTo(v, 128); fabricContext.stroke();
+          fabricContext.beginPath(); fabricContext.moveTo(0, v); fabricContext.lineTo(128, v); fabricContext.stroke();
         }
       }
       const fabric = new T.CanvasTexture(fabricCanvas); fabric.colorSpace = T.SRGBColorSpace;
-      fabric.wrapS = fabric.wrapT = T.RepeatWrapping; fabric.repeat.set(3, 3);
-      const dressMaterial = mat("collar", 0.85); dressMaterial.map = fabric;
-      const skinMaterial = new T.MeshPhysicalMaterial({ color: color("skin"), roughness: 0.62, clearcoat: 0.12, clearcoatRoughness: 0.7 });
-      const body = new T.Mesh(new T.CapsuleGeometry(0.66, 0.48, 8, 32), dressMaterial);
-      body.scale.z = 0.7;
-      body.position.y = -1.05; root.add(body);
-      const neck = new T.Mesh(new T.CapsuleGeometry(0.21, 0.17, 6, 16), skinMaterial);
-      neck.position.set(0, -0.42, 0.05); root.add(neck);
-      const collar = new T.Mesh(new T.CylinderGeometry(0.27, 0.32, 0.26, 32, 1, true), dressMaterial);
-      collar.position.set(0, -0.5, 0.03); root.add(collar);
-      const collarRoll = new T.Mesh(new T.TorusGeometry(0.29, 0.05, 12, 32), dressMaterial);
-      collarRoll.rotation.x = Math.PI / 2; collarRoll.position.set(0, -0.4, 0.03); root.add(collarRoll);
-
+      fabric.wrapS = fabric.wrapT = T.RepeatWrapping; fabric.repeat.set(4, 3);
+      const dressMaterial = new T.MeshStandardMaterial({ color: "#ffffff", roughness: 0.9, map: fabric });
+      const skinMaterial = new T.MeshPhysicalMaterial({ color: color("skin"), roughness: 0.55, clearcoat: 0.15, clearcoatRoughness: 0.6, sheen: 0.4, sheenColor: new T.Color(color("blush")) });
+      const bodice = new T.Mesh(new T.CapsuleGeometry(0.5, 0.35, 8, 32), dressMaterial);
+      bodice.scale.z = 0.72; bodice.position.y = -0.8; root.add(bodice);
+      const skirt = new T.Mesh(new T.CylinderGeometry(0.5, 0.95, 0.85, 40, 4, true), dressMaterial);
+      const skirtPos = skirt.geometry.getAttribute("position");
+      for (let i = 0; i < skirtPos.count; i++) {
+        const x = skirtPos.getX(i), z = skirtPos.getZ(i), y = skirtPos.getY(i);
+        const pleat = 1 + Math.sin(Math.atan2(z, x) * 14) * 0.035 * (0.5 - y / 0.85);
+        skirtPos.setXYZ(i, x * pleat, y, z * pleat * 0.75);
+      }
+      skirt.geometry.computeVertexNormals(); dressMaterial.side = T.DoubleSide;
+      skirt.position.y = -1.42; root.add(skirt);
+      const neck = new T.Mesh(new T.CapsuleGeometry(0.19, 0.17, 6, 16), skinMaterial);
+      neck.position.set(0, -0.4, 0.03); root.add(neck);
+      const collarMaterial = mat("collar", 0.7);
+      for (const side of [-1, 1]) {
+        const flap = new T.Mesh(new T.SphereGeometry(0.26, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), collarMaterial);
+        flap.scale.set(1, 0.2, 0.85); flap.position.set(side * 0.17, -0.56, 0.3); flap.rotation.set(1.15, 0, side * 0.35); root.add(flap);
+      }
+      const button = new T.Mesh(new T.SphereGeometry(0.03, 12, 8), collarMaterial);
+      button.position.set(0, -0.82, 0.37); root.add(button);
       // Jointed sleeves and hands extend the same character, without external assets.
       const arms = new T.Group(); root.add(arms);
       const shoulders: InstanceType<typeof T.Group>[] = [];
@@ -79,9 +92,11 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, 
       const wrists: InstanceType<typeof T.Group>[] = [];
       const fingers: InstanceType<typeof T.Group>[][] = [];
       for (const side of [-1, 1]) {
-        const shoulder = new T.Group(); shoulder.position.set(side * 0.65, -0.62, 0.14); arms.add(shoulder);
-        const sleeve = new T.Mesh(new T.CapsuleGeometry(0.14, 0.25, 4, 12), dressMaterial);
-        sleeve.position.y = -0.16; shoulder.add(sleeve);
+        const shoulder = new T.Group(); shoulder.position.set(side * 0.52, -0.6, 0.08); arms.add(shoulder);
+        const sleeve = new T.Mesh(new T.SphereGeometry(0.19, 20, 14), dressMaterial);
+        sleeve.scale.set(1, 1.15, 0.95); sleeve.position.y = -0.1; shoulder.add(sleeve);
+        const upper = new T.Mesh(new T.CapsuleGeometry(0.085, 0.16, 4, 12), skinMaterial);
+        upper.position.y = -0.24; shoulder.add(upper);
         const elbow = new T.Group(); elbow.position.y = -0.34; shoulder.add(elbow);
         const forearm = new T.Mesh(new T.CapsuleGeometry(0.082, 0.22, 4, 12), skinMaterial);
         forearm.position.y = -0.13; elbow.add(forearm);
