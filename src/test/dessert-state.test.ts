@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AVATAR_POSES, companionEmotion, easePose } from "@/lib/dessert-state";
+import { companionEmotion } from "@/lib/dessert-state";
 
 describe("Dessert companion reactions", () => {
   it("listens while the user types", () => expect(companionEmotion("hello", false, false, "happy")).toBe("listening"));
