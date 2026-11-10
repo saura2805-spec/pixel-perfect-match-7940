@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AvatarPortrait as Avatar } from "./AvatarPortrait";
+import { Avatar3D as Avatar } from "./Avatar3D";
 import { sendChat, type ChatMessage, type Emotion, type Mode } from "@/lib/dessert-api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

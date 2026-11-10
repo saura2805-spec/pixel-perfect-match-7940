@@ -11,6 +11,7 @@ export const AVATAR_POSES: Record<Emotion, AvatarPose> = {
   excited: { smile: 1, eye: 1.2, float: 0.11, tilt: 0, blush: 0.8, gaze: 0, brow: 0.15, open: 1, nod: 0.06 },
   affectionate: { smile: 0.65, eye: 0.5, float: 0.035, tilt: 0.2, blush: 1, gaze: 0, brow: 0.03, open: 0, nod: 0 },
   sad: { smile: -0.65, eye: 0.75, float: 0.018, tilt: -0.13, blush: 0.1, gaze: -0.06, brow: -0.25, open: 0, nod: -0.08 },
+  exhausted: { smile: -0.2, eye: 0.45, float: 0.012, tilt: 0.2, blush: 0.05, gaze: -0.08, brow: -0.15, open: 0.2, nod: -0.1 },
   thinking: { smile: 0, eye: 0.8, float: 0.025, tilt: -0.22, blush: 0.2, gaze: 0.09, brow: 0.23, open: 0, nod: -0.025 },
   listening: { smile: 0.35, eye: 1.05, float: 0.035, tilt: 0.12, blush: 0.45, gaze: 0, brow: 0.11, open: 0, nod: 0.08 },
 };

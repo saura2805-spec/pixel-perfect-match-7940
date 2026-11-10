@@ -11,6 +11,7 @@ export const GESTURE_POSES: Record<Emotion, GesturePose> = {
   excited: { left: arm(-0.85, -1.35, -0.1, -0.3, 0.06), right: arm(0.85, 1.35, 0.1, 0.3, 0.06) },
   affectionate: { left: arm(0.28, -0.95, 0.2, 0.3, 0.35, -0.35), right: arm(-0.28, 0.95, -0.2, -0.3, 0.35, -0.35) },
   sad: { left: arm(0.18, -0.35, 0.1, 0.2, 0.5), right: arm(-0.18, 0.35, -0.1, -0.2, 0.5) },
+  exhausted: { left: arm(0.2, -0.3, 0.1, 0.2, 0.4), right: arm(-0.2, 0.3, -0.1, -0.2, 0.4) },
   thinking: { left: arm(-0.12, -0.35), right: arm(0.3, 2.35, -0.2, -0.4, 0.6, -0.2) },
   listening: { left: arm(-0.2, -0.3), right: arm(0.5, 1.05, 0.18, 0.45, 0.12, -0.12) },
 };
