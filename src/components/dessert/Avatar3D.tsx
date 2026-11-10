@@ -71,12 +71,21 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
       for (const x of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.006, 10, 40), frame); ring.position.x = x * 0.052; glasses.add(ring); }
       const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.02), frame); bridge.rotation.z = Math.PI / 2; glasses.add(bridge);
       head.add(glasses);
+      const hairMat = new THREE.MeshToonMaterial({ color: getComputedStyle(el).getPropertyValue("--avatar-hair").trim() || "#2a1914" });
+      const hair = new THREE.Group();
+      for (let i = 0; i < 9; i++) {
+        const a = -1.25 + (i / 8) * 2.5; const len = 0.22 + Math.cos(a) * 0.06;
+        const pts = Array.from({ length: 7 }, (_, k) => new THREE.Vector3(Math.sin(a) * (0.13 + k * 0.006) + Math.sin(k * 1.4 + i) * 0.012, 0.1 - k * len / 6, Math.cos(a) * 0.1 + 0.02 + Math.cos(k * 1.4 + i) * 0.008));
+        const lock = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.045, 10), hairMat);
+        hair.add(lock);
+      }
+      head.add(hair);
       scene.updateMatrixWorld(true);
       const headPos = head.getWorldPosition(new THREE.Vector3());
-      glasses.position.set(0, 0.075, 0.115);
+      glasses.position.set(0, 0.075, -0.115);
       Object.assign(window as object, import.meta.env.DEV ? { __dessertGlasses: glasses } : {});
 
-      const target = new THREE.Vector3(0, headPos.y - 0.05, 0);
+      const target = new THREE.Vector3(0, headPos.y + 0.02, 0);
       let yaw = 0, drag = false, lastX = 0;
       const down = (e: PointerEvent) => { drag = true; lastX = e.clientX; };
       const move = (e: PointerEvent) => { if (drag) { yaw = Math.max(-0.8, Math.min(0.8, yaw + (e.clientX - lastX) * 0.01)); lastX = e.clientX; } };
@@ -125,7 +134,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         setArm("left", pose.left);
         setArm("right", pose.right, g.wave, g.weight);
         vrm.update(dt);
-        camera.position.set(0, target.y + 0.02, 1.7); camera.lookAt(target);
+        camera.position.set(0, target.y + 0.02, 1.95); camera.lookAt(target);
         renderer.render(scene, camera);
         if (first) { first = false; setReady(true); }
       };
