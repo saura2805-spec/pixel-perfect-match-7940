@@ -70,8 +70,8 @@ export function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion
         if (!uv || !pos) return;
         const inBun = (u: number, v: number) => (u > 0.755 && u < 0.885 && v > 0.04 && v < 0.16) || (u > 0.79 && u < 0.93 && v > 0.35 && v < 0.5);
         for (let i = 0; i < uv.count; i++) {
-          if (!inBun(uv.getX(i), uv.getY(i)) || pos.getY(i) < headY + 0.18) continue;
-          pos.setXYZ(i, pos.getX(i) * 0.3, headY + 0.14, pos.getZ(i) * 0.3);
+          if (!inBun(uv.getX(i), uv.getY(i)) || pos.getY(i) < headY + 0.1) continue;
+          pos.setXYZ(i, pos.getX(i) * 0.3, headY + 0.1, pos.getZ(i) * 0.3);
         }
         pos.needsUpdate = true;
       });
