@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowUpRight, Mic, Square, MessageSquarePlus } from "lucide-react";
 import { companionEmotion } from "@/lib/dessert-state";
-import { readMood, SAMPLE_MESSAGES, type MoodReading } from "@/lib/dessert-emotions";
+import { readMood } from "@/lib/dessert-emotions";
 import { claimCompanionGreeting, newCompanionSession, useChatSession } from "@/hooks/use-companion-session";
 import { GREETING_TEXT } from "@/lib/dessert-greeting";
 import { WorkspaceNav } from "./WorkspaceNav";
@@ -75,12 +75,10 @@ export function ChatScreen({ mode, selectedCaseId }: { mode: Mode; selectedCaseI
   }, [input]);
   useEffect(() => { composerRef.current?.focus({ preventScroll: true }); }, [mode]);
 
-  const [preview, setPreview] = useState<(MoodReading & { text: string }) | null>(null);
   const [intensity, setIntensity] = useState(1);
-  const [samplesOpen, setSamplesOpen] = useState(false);
   const liveEmotion = companionEmotion(input, listening, loading, emotion);
-  const displayEmotion = preview && !input.trim() && !loading && !listening ? preview.emotion : liveEmotion;
-  const displayIntensity = preview && displayEmotion === preview.emotion ? preview.intensity : intensity;
+  const displayEmotion = liveEmotion;
+  const displayIntensity = intensity;
 
   async function send() {
     const text = input.trim();
@@ -88,7 +86,7 @@ export function ChatScreen({ mode, selectedCaseId }: { mode: Mode; selectedCaseI
     recRef.current?.stop(); setListening(false);
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "user", content: text };
     const next = [...messages, userMsg];
-    setMessages(next); setInput(""); setLoading(true); setError(null); setPreview(null);
+    setMessages(next); setInput(""); setLoading(true); setError(null);
     try {
       const request = mode === "mentor" ? mentorMessage(text, styleId, journal.cases.find((c) => c.id === caseId), journal.reviews) : text;
       const { reply, emotion: e } = await sendChat(mode, request, messages);
@@ -131,16 +129,6 @@ export function ChatScreen({ mode, selectedCaseId }: { mode: Mode; selectedCaseI
               {error ? "Connection unavailable" : loading ? "Thinking…" : listening ? "Listening…" : "Here with you"}
             </div>
             <span className="mt-3 inline-block rounded-full border border-primary/30 px-3 py-1 text-[10px] uppercase tracking-widest text-primary">{displayEmotion}</span>
-            <div className="mt-3">
-              <Button type="button" variant="outline" size="sm" className="h-7 rounded-full text-xs" aria-expanded={samplesOpen} onClick={() => { setSamplesOpen((o) => !o); if (samplesOpen) setPreview(null); }}>{samplesOpen ? "Done trying" : "Try her reactions"}</Button>
-            </div>
-            {samplesOpen && <div className="mt-3 max-w-72 space-y-2 lg:mx-auto">
-              <p className="text-[11px] text-muted-foreground">Tap a sample. Dessert reads it locally (nothing is sent to the AI).</p>
-              <div className="flex flex-wrap gap-1.5 lg:justify-center">
-                {SAMPLE_MESSAGES.map((m) => <button key={m.label} type="button" className={cn("rounded-full border px-2.5 py-1 text-[11px] transition-colors hover:border-primary/60", preview?.text === m.user && "border-primary bg-primary/15 text-primary")} onClick={() => setPreview({ ...readMood({ user: m.user }), text: m.user })}>{m.label}</button>)}
-              </div>
-              {preview && <p role="status" className="text-xs leading-relaxed text-muted-foreground">“{preview.text}” → <span className="text-primary">{preview.emotion}</span>{preview.cues.length > 0 && <> · cues: {preview.cues.join(", ")}</>}</p>}
-            </div>}
             {mode === "companion" && greetingVisible && <p role="status" className="mt-3 max-w-64 text-sm leading-relaxed text-primary animate-rise">{GREETING_TEXT}</p>}
           </div>
         </div>
