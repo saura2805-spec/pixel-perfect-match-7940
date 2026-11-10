@@ -33,3 +33,16 @@ describe("Dessert 3D expressions", () => {
     expect(inferEmotion("ok")).toBe("neutral");
   });
 });
+
+import { readMood, SAMPLE_MESSAGES } from "@/lib/dessert-emotions";
+describe("Dessert context mood reading", () => {
+  it("flips negated feelings", () => expect(readMood({ user: "I'm not happy with today" }).emotion).toBe("sad"));
+  it("prefers pride when tired after an achievement", () => expect(readMood({ user: "I'm exhausted but I passed!" }).emotion).toBe("proud"));
+  it("reads fear of tomorrow as worried", () => expect(readMood({ user: "What if I fail tomorrow? I'm nervous" }).emotion).toBe("worried"));
+  it("stronger wording gives stronger intensity", () =>
+    expect(readMood({ user: "I am SO SO tired, completely exhausted" }).intensity).toBeGreaterThan(readMood({ user: "bit tired" }).intensity));
+  it("stays neutral on plain messages", () => expect(readMood({ user: "ok see you" }).emotion).toBe("neutral"));
+  it("gives every sample a non-neutral reading", () => {
+    for (const s of SAMPLE_MESSAGES) expect(readMood({ user: s.user }).emotion, s.user).not.toBe("neutral");
+  });
+});

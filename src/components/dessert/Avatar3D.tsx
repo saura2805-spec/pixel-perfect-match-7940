@@ -6,15 +6,15 @@ import modelAsset from "@/assets/dessert-base.vrm.asset.json";
 import skinUrl from "@/assets/dessert-skin.webp";
 
 type Greeting = { sessionId: number; claim: (id: number) => boolean; onStart: () => void; onEnd: () => void };
-type Props = { emotion?: Emotion; mode?: Mode; size?: number; greeting?: Greeting | undefined };
+type Props = { intensity?: number; emotion?: Emotion; mode?: Mode; size?: number; greeting?: Greeting | undefined };
 
 // Interactive VRM Dessert: real facial expressions + humanoid bones, drag to turn her.
-export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: Props) {
+export function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion", greeting }: Props) {
   const mount = useRef<HTMLDivElement>(null);
-  const live = useRef({ emotion, mode, greetStart: -1 });
+  const live = useRef({ emotion, mode, intensity, greetStart: -1 });
   const [ready, setReady] = useState(false);
   const [waving, setWaving] = useState(false);
-  live.current.emotion = emotion; live.current.mode = mode;
+  live.current.emotion = emotion; live.current.mode = mode; live.current.intensity = intensity;
 
   const sessionId = greeting?.sessionId;
   useEffect(() => {
@@ -61,6 +61,20 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
           (mat as { needsUpdate?: boolean }).needsUpdate = true;
         }
       });
+      // Tuck the two top hair buns into the head so her long hair reads like the reference.
+      vrm.scene.updateMatrixWorld(true);
+      const headY = (vrm.humanoid.getRawBoneNode("head") as import("three").Object3D).getWorldPosition(new THREE.Vector3()).y;
+      vrm.scene.traverse((o: import("three").Object3D) => {
+        const geo = (o as import("three").Mesh).geometry as import("three").BufferGeometry | undefined;
+        const uv = geo?.getAttribute("uv"); const pos = geo?.getAttribute("position");
+        if (!uv || !pos) return;
+        const inBun = (u: number, v: number) => (u > 0.755 && u < 0.885 && v > 0.04 && v < 0.16) || (u > 0.79 && u < 0.93 && v > 0.35 && v < 0.5);
+        for (let i = 0; i < uv.count; i++) {
+          if (!inBun(uv.getX(i), uv.getY(i)) || pos.getY(i) < headY + 0.1) continue;
+          pos.setXYZ(i, pos.getX(i) * 0.3, headY + 0.1, pos.getZ(i) * 0.3);
+        }
+        pos.needsUpdate = true;
+      });
       scene.add(vrm.scene);
       const bone = (n: string) => vrm.humanoid.getNormalizedBoneNode(n as import("@pixiv/three-vrm").VRMHumanBoneName) as import("three").Object3D | null;
       const head = bone("head")!;
@@ -73,12 +87,16 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
       head.add(glasses);
       const hairMat = new THREE.MeshToonMaterial({ color: getComputedStyle(el).getPropertyValue("--avatar-hair").trim() || "#2a1914" });
       const hair = new THREE.Group();
-      for (let i = 0; i < 9; i++) {
-        const a = -1.25 + (i / 8) * 2.5; const len = 0.22 + Math.cos(a) * 0.06;
-        const pts = Array.from({ length: 7 }, (_, k) => new THREE.Vector3(Math.sin(a) * (0.13 + k * 0.006) + Math.sin(k * 1.4 + i) * 0.012, 0.1 - k * len / 6, Math.cos(a) * 0.1 + 0.02 + Math.cos(k * 1.4 + i) * 0.008));
-        const lock = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.045, 10), hairMat);
-        hair.add(lock);
-      }
+      const lock = (a: number, len: number, r: number, front = 0) => {
+        const pts = Array.from({ length: 9 }, (_, k) => {
+          const d = k / 8; const out = 0.135 + d * 0.035 + front * 0.01;
+          return new THREE.Vector3(Math.sin(a) * out + Math.sin(d * 9 + a * 3) * 0.018, 0.13 - d * len, Math.cos(a) * out * (front ? -0.55 : 0.95) + 0.02 + Math.cos(d * 9 + a) * 0.012);
+        });
+        const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 32, r, 10), hairMat);
+        m.scale.set(1, 1, 1); hair.add(m);
+      };
+      for (let i = 0; i < 13; i++) { const a = -1.5 + (i / 12) * 3; lock(a, 0.34 + Math.cos(a) * 0.06, 0.042); }
+      for (const side of [-1, 1]) { lock(side * 1.25, 0.32, 0.036, 1); lock(side * 1.45, 0.3, 0.032, 1); }
       head.add(hair);
       scene.updateMatrixWorld(true);
       const headPos = head.getWorldPosition(new THREE.Vector3());
@@ -113,7 +131,8 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         const g = live.current.greetStart >= 0 && !reduced ? waveOverlay((now - live.current.greetStart) / 1000, GREETING_DURATION) : { weight: 0, wave: 0 };
         const em = vrm.expressionManager;
         if (em) {
-          const f = pose.face, gw = g.weight;
+          const gw = g.weight, sc = 0.55 + 0.45 * live.current.intensity;
+          const f = Object.fromEntries(Object.entries(pose.face).map(([k, v]) => [k, v * sc])) as typeof pose.face;
           em.setValue("happy", Math.max(f.happy, gw)); em.setValue("sad", f.sad * (1 - gw)); em.setValue("relaxed", f.relaxed * (1 - gw));
           em.setValue("surprised", f.surprised); em.setValue("angry", f.angry); em.setValue("lookUp", f.lookUp); em.setValue("lookDown", f.lookDown);
           em.setValue("oh", f.oh); em.setValue("aa", f.aa + (reduced ? 0 : Math.max(0, Math.sin(t * 0.7)) * f.aa * 0.5));

@@ -18,4 +18,4 @@
 - Companion measures visualViewport height on resize so mobile keyboards do not obscure the composer; compact CSS is scoped to Companion and short viewports, preserving Mentor and desktop layouts.
 - Clinical cases and learning reviews use validated browser-local records, separate from ephemeral chat history; hydrate after mounting and report storage failures, keeping this local-only app independent of Cloud.
 - Mentor case and response-style context is composed into the existing message field; preserve the Express request contract and render the user's original message in the transcript.
-- Chat avatar is an interactive VRM model (CC0 base, retextured, procedural glasses/hair) in Avatar3D; per-mood face weights and bone poses live in browser-safe dessert-expressions, and the mood list plus a local word-cue fallback live in dessert-emotions.
+- Chat avatar is an interactive VRM model (CC0 base, retextured, procedural glasses/hair) in Avatar3D; per-mood face weights and bone poses live in browser-safe dessert-expressions, and the mood list plus local context scoring (negation, intensity, history; used only when the AI sends no mood) live in dessert-emotions.
