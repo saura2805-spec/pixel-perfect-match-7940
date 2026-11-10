@@ -17,6 +17,6 @@
 
 Integration limitation: the real local Express/Ollama service is unavailable in this preview. Controlled API replies verified the UI contract, not live AI. Real microphone input and device performance remain device-only checks.
 ## 3D Dessert
-- [ ] Replace portraits with a true interactive 3D model keeping the reference look
-- [ ] Face + gestures visibly express happy, sad, exhausted, thinking
-- [ ] Many more moods + gestures driven by the conversation (reply emotion)
+- [x] Replace portraits with a true interactive 3D model keeping the reference look
+- [x] Face + gestures visibly express happy, sad, exhausted, thinking
+- [x] Many more moods + gestures driven by the conversation (reply emotion)

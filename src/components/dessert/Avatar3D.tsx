@@ -62,7 +62,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
         }
       });
       scene.add(vrm.scene);
-      const bone = (n: string) => vrm.humanoid.getNormalizedBoneNode(n) as import("three").Object3D | null;
+      const bone = (n: string) => vrm.humanoid.getNormalizedBoneNode(n as import("@pixiv/three-vrm").VRMHumanBoneName) as import("three").Object3D | null;
       const head = bone("head")!;
 
       // Round dark glasses on the head bone.
