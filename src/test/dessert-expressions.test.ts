@@ -46,3 +46,13 @@ describe("Dessert context mood reading", () => {
     for (const s of SAMPLE_MESSAGES) expect(readMood({ user: s.user }).emotion, s.user).not.toBe("neutral");
   });
 });
+
+describe("everyday conversation moods", () => {
+  it.each([
+    ["hey how are you", "happy"],
+    ["what's the mechanism of action of metformin?", "curious"],
+    ["good night dessert", "calm"],
+    ["wait what?! seriously?", "surprised"],
+    ["I finally cleared my NEET PG!!", "excited"],
+  ])("%s -> %s", (user, mood) => expect(readMood({ user }).emotion).toBe(mood));
+});

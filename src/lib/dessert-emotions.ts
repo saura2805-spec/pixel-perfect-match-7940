@@ -9,18 +9,18 @@ type Lexicon = Partial<Record<Emotion, [string, number][]>>;
 
 // Weighted cues: words/phrases (matched on word boundaries) and emoji.
 const LEX: Lexicon = {
-  happy: [["happy", 2], ["glad", 2], ["good day", 2], ["nice", 1], ["great", 1.5], ["good", 1], ["smile", 1.5], ["enjoyed", 2], ["fun", 1.5], ["😊", 2], ["🙂", 1]],
-  excited: [["excited", 3], ["can't wait", 3], ["cant wait", 3], ["amazing", 2], ["awesome", 2], ["yay", 2.5], ["finally", 1.5], ["🎉", 2.5], ["🤩", 3]],
+  happy: [["happy", 2], ["glad", 2], ["good day", 2], ["nice", 1], ["great", 1.5], ["good", 1], ["smile", 1.5], ["hey", 1.5], ["hello", 1.5], ["hii", 1.5], ["how are you", 1.5], ["enjoyed", 2], ["fun", 1.5], ["😊", 2], ["🙂", 1]],
+  excited: [["excited", 3], ["can't wait", 3], ["cant wait", 3], ["amazing", 2], ["awesome", 2], ["yay", 2.5], ["finally", 1.5], ["cleared", 2.5], ["got selected", 3], ["got in", 2.5], ["🎉", 2.5], ["🤩", 3]],
   laughing: [["haha", 3], ["hahaha", 3.5], ["lol", 2.5], ["lmao", 3], ["hehe", 2], ["funny", 2], ["hilarious", 3], ["joke", 1.5], ["😂", 3.5], ["🤣", 3.5]],
   affectionate: [["love you", 4], ["miss you", 3.5], ["hug", 2.5], ["cuddle", 3], ["thank you", 2], ["thanks", 1.5], ["you're the best", 3], ["sweet", 1.5], ["💜", 3], ["❤️", 3], ["🥰", 3.5]],
   shy: [["blush", 3], ["embarrassed", 3], ["shy", 3], ["aww", 2], ["cute", 2], ["compliment", 1.5], ["😳", 3], ["☺️", 2.5]],
   proud: [["proud", 3.5], ["passed", 3], ["got the job", 4], ["topped", 3], ["finished", 2], ["did it", 3], ["achieved", 3], ["well done", 2.5], ["great job", 2.5], ["scored", 2], ["🏆", 3]],
   encouraging: [["you can do", 3.5], ["keep going", 3], ["believe in you", 3.5], ["don't give up", 3.5], ["step by step", 2], ["you've got this", 3.5], ["try again", 2], ["💪", 2.5]],
-  calm: [["breathe", 2.5], ["relax", 2.5], ["calm", 2.5], ["rest", 2], ["gently", 1.5], ["peaceful", 2.5], ["sleep well", 2.5], ["take it easy", 2.5], ["🌙", 2]],
-  curious: [["tell me more", 3], ["curious", 2.5], ["what happened", 2.5], ["how come", 2], ["interesting", 2], ["really?", 1.5], ["guess what", 3]],
+  calm: [["breathe", 2.5], ["relax", 2.5], ["calm", 2.5], ["rest", 2], ["gently", 1.5], ["peaceful", 2.5], ["sleep well", 2.5], ["good night", 2.5], ["goodnight", 2.5], ["gn", 1.5], ["take it easy", 2.5], ["🌙", 2]],
+  curious: [["tell me more", 3], ["curious", 2.5], ["what happened", 2.5], ["how come", 2], ["interesting", 2], ["really?", 1.5], ["guess what", 3], ["mechanism", 1.5], ["explain", 1.5], ["how does", 2], ["what is", 1.5], ["what's the", 1.5], ["why does", 1.5]],
   thinking: [["let me think", 3], ["thinking", 2], ["consider", 1.5], ["maybe", 1], ["plan", 1], ["decide", 2], ["should i", 2], ["differential", 2]],
   confused: [["confused", 3], ["confusing", 3], ["don't understand", 3.5], ["not sure", 2], ["unclear", 2.5], ["hmm", 1.5], ["what do you mean", 3], ["lost", 1.5], ["🤔", 2.5]],
-  surprised: [["wow", 2.5], ["whoa", 2.5], ["no way", 3], ["omg", 3], ["unbelievable", 3], ["suddenly", 1.5], ["can't believe", 3], ["😮", 3], ["😲", 3]],
+  surprised: [["wow", 2.5], ["whoa", 2.5], ["no way", 3], ["omg", 3], ["unbelievable", 3], ["suddenly", 1.5], ["can't believe", 3], ["😮", 3], ["wait what", 3], ["seriously?", 2.5], ["what?!", 3], ["😲", 3]],
   worried: [["worried", 3.5], ["anxious", 3.5], ["nervous", 3], ["scared", 3], ["stressed", 3], ["stress", 2.5], ["afraid", 3], ["panic", 3.5], ["exam tomorrow", 2.5], ["what if", 2], ["😟", 3], ["😰", 3]],
   sad: [["sad", 3.5], ["cry", 3], ["crying", 3.5], ["lonely", 3.5], ["heartbroken", 4], ["upset", 3], ["depressed", 4], ["failed", 3], ["miss", 1.5], ["lost my", 3], ["sorry to hear", 2.5], ["bad day", 3], ["😢", 3.5], ["😭", 4]],
   exhausted: [["tired", 3], ["exhausted", 4], ["sleepy", 3], ["drained", 3.5], ["worn out", 3.5], ["burnt out", 4], ["burned out", 4], ["no energy", 3.5], ["long day", 2.5], ["all night", 2], ["😴", 3], ["🥱", 3]],
