@@ -6,7 +6,6 @@ import modelAsset from "@/assets/dessert-base.vrm.asset.json";
 import skinUrl from "@/assets/dessert-skin.webp";
 
 type Greeting = { sessionId: number; claim: (id: number) => boolean; onStart: () => void; onEnd: () => void };
-const FWD = -1;
 type Props = { emotion?: Emotion; mode?: Mode; size?: number; greeting?: Greeting | undefined };
 
 // Interactive VRM Dessert: real facial expressions + humanoid bones, drag to turn her.
@@ -96,46 +95,44 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
       const resize = () => { const w = el.clientWidth, h = el.clientHeight; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); };
       const ro = new ResizeObserver(resize); ro.observe(el); resize();
 
-      let pose: RigPose = rigPose(live.current.emotion, live.current.mode);
+      let pose: RigPose = rigPose(live.current.emotion as Emotion, live.current.mode);
       let last = performance.now(), t = 0, blinkAt = 2, first = true;
       const setArm = (side: "left" | "right", a: RigPose["left"], wave = 0, lift = 0) => {
         const s = side === "left" ? -1 : 1;
         const ua = bone(side + "UpperArm"), la = bone(side + "LowerArm"), hand = bone(side + "Hand");
         if (!ua || !la) return;
-        const downA = a.down * (1 - lift) + -0.2 * lift;
-        ua.rotation.set(FWD * a.forward * (1 - lift), 0, -s * downA);
-        la.rotation.set(0, s * (a.elbow * (1 - lift) + 1.9 * lift), 0);
-        la.rotation.x = -a.twist * (1 - lift);
-        if (hand) hand.rotation.set(0, 0, s * wave);
+        const mix = (v: number, w: number) => v * (1 - lift) + w * lift;
+        ua.rotation.set(mix(a.forward, 0), 0, -s * mix(a.down, 1.1));
+        la.rotation.set(0, s * mix(a.elbow, 2.4), s * (mix(a.lift, 0.8) + wave));
+        if (hand) hand.rotation.set(0, 0, s * wave * 0.5);
       };
       const loop = (now: number) => {
         raf = requestAnimationFrame(loop);
         const dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt * (reduced ? 0.3 : 1);
-        pose = easeRig(pose, rigPose(live.current.emotion, live.current.mode), dt);
+        pose = easeRig(pose, rigPose(live.current.emotion as Emotion, live.current.mode), dt);
         const g = live.current.greetStart >= 0 && !reduced ? waveOverlay((now - live.current.greetStart) / 1000, GREETING_DURATION) : { weight: 0, wave: 0 };
         const em = vrm.expressionManager;
         if (em) {
           const f = pose.face, gw = g.weight;
           em.setValue("happy", Math.max(f.happy, gw)); em.setValue("sad", f.sad * (1 - gw)); em.setValue("relaxed", f.relaxed * (1 - gw));
           em.setValue("surprised", f.surprised); em.setValue("angry", f.angry); em.setValue("lookUp", f.lookUp); em.setValue("lookDown", f.lookDown);
-          em.setValue("aa", f.aa + (reduced ? 0 : Math.max(0, Math.sin(t * 0.7)) * f.aa * 0.5));
+          em.setValue("oh", f.oh); em.setValue("aa", f.aa + (reduced ? 0 : Math.max(0, Math.sin(t * 0.7)) * f.aa * 0.5));
           blinkAt -= dt; let blink = f.lids;
           if (blinkAt < 0) { blink = Math.max(blink, 1 - Math.abs(blinkAt + 0.08) / 0.08); if (blinkAt < -0.16) blinkAt = 2 + Math.random() * 3; }
           em.setValue("blink", Math.min(1, blink));
         }
-        const breathe = reduced ? 0 : Math.sin(t * 1.6 * pose.speed);
+        const breathe = reduced ? 0 : Math.sin(t * 1.6 * pose.motion.speed);
         const spine = bone("spine"), chest = bone("chest") ?? bone("upperChest");
-        if (spine) spine.rotation.x = -pose.spine + breathe * 0.012 * pose.bob;
+        if (spine) spine.rotation.x = -pose.spine + breathe * 0.012 * pose.motion.bounce;
         if (chest) chest.rotation.x = breathe * 0.01;
         const neck = bone("neck");
-        head.rotation.set(-pose.headPitch + (reduced ? 0 : Math.sin(t * 0.9) * 0.02), (reduced ? 0 : Math.sin(t * 0.5) * 0.06) - g.weight * 0.15, pose.headRoll + (reduced ? 0 : Math.sin(t * 0.7) * 0.03) + g.weight * 0.1);
+        const mo = pose.motion, r = reduced ? 0 : 1;
+        head.rotation.set(-pose.headPitch - r * Math.sin(t * 3 * mo.speed) * mo.nod - r * Math.sin(t * 0.9) * 0.02, pose.headYaw + r * Math.sin(t * 0.5) * 0.06 + r * Math.sin(t * 9) * mo.shake - g.weight * 0.15, pose.headRoll + r * Math.sin(t * 0.7 * mo.speed) * mo.sway + g.weight * 0.1);
         if (neck) neck.rotation.x = -pose.headPitch * 0.3;
-        vrm.scene.position.y = reduced ? 0 : Math.sin(t * 2 * pose.speed) * 0.004 * pose.bob;
+        vrm.scene.position.y = reduced ? 0 : Math.abs(Math.sin(t * 2 * pose.motion.speed)) * 0.006 * pose.motion.bounce;
         vrm.scene.rotation.y = yaw + Math.PI;
         setArm("left", pose.left);
         setArm("right", pose.right, g.wave, g.weight);
-        const dbg = (window as unknown as { __dessertArm?: { x: number; y: number; z: number } }).__dessertArm;
-        if (import.meta.env.DEV && dbg) { const la = bone("rightLowerArm"); bone("rightUpperArm")!.rotation.set(dbg.x, 0, -1.1); la!.rotation.set(0, dbg.y, dbg.z); }
         vrm.update(dt);
         camera.position.set(0, target.y + 0.02, 1.95); camera.lookAt(target);
         renderer.render(scene, camera);
