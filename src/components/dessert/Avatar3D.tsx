@@ -68,7 +68,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
       // Round dark glasses on the head bone.
       const glasses = new THREE.Group();
       const frame = new THREE.MeshStandardMaterial({ color: 0x1a1210, roughness: 0.4, metalness: 0.3 });
-      for (const x of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.006, 10, 40), frame); ring.position.x = x * 0.052; glasses.add(ring); }
+      for (const x of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.0055, 12, 48), frame); ring.position.x = x * 0.068; glasses.add(ring); }
       const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.02), frame); bridge.rotation.z = Math.PI / 2; glasses.add(bridge);
       head.add(glasses);
       const hairMat = new THREE.MeshToonMaterial({ color: getComputedStyle(el).getPropertyValue("--avatar-hair").trim() || "#2a1914" });
@@ -82,7 +82,7 @@ export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: 
       head.add(hair);
       scene.updateMatrixWorld(true);
       const headPos = head.getWorldPosition(new THREE.Vector3());
-      glasses.position.set(0, 0.075, -0.115);
+      glasses.position.set(0, 0.118, -0.17);
       Object.assign(window as object, import.meta.env.DEV ? { __dessertGlasses: glasses } : {});
 
       const target = new THREE.Vector3(0, headPos.y + 0.02, 0);
