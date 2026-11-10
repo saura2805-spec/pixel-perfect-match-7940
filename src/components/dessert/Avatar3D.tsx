@@ -62,22 +62,16 @@ export function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion
         }
       });
       // Tuck the two top hair buns into the head so her long hair reads like the reference.
+      vrm.scene.updateMatrixWorld(true);
+      const headY = (vrm.humanoid.getRawBoneNode("head") as import("three").Object3D).getWorldPosition(new THREE.Vector3()).y;
       vrm.scene.traverse((o: import("three").Object3D) => {
-        const mesh = o as import("three").Mesh; const geo = mesh.geometry as import("three").BufferGeometry | undefined;
+        const geo = (o as import("three").Mesh).geometry as import("three").BufferGeometry | undefined;
         const uv = geo?.getAttribute("uv"); const pos = geo?.getAttribute("position");
         if (!uv || !pos) return;
         const inBun = (u: number, v: number) => (u > 0.755 && u < 0.885 && v > 0.04 && v < 0.16) || (u > 0.79 && u < 0.93 && v > 0.35 && v < 0.5);
-        const idx: number[] = []; const c = new THREE.Vector3();
-        for (let i = 0; i < uv.count; i++) if (inBun(uv.getX(i), uv.getY(i))) { idx.push(i); c.add(new THREE.Vector3().fromBufferAttribute(pos, i)); }
-        if (!idx.length) return;
-        for (const i of idx) { const p = new THREE.Vector3().fromBufferAttribute(pos, i); p.x *= 0.82; p.y -= Math.max(0, p.y - 0) * 0.0; pos.setXYZ(i, p.x, p.y, p.z); }
-        // collapse each bun toward the skull: shrink around its own centre, then sink it.
-        const groups: number[][] = [[], []];
-        for (const i of idx) groups[pos.getX(i) > 0 ? 0 : 1]!.push(i);
-        for (const g of groups) {
-          if (!g.length) continue; const gc = new THREE.Vector3();
-          for (const i of g) gc.add(new THREE.Vector3().fromBufferAttribute(pos, i)); gc.multiplyScalar(1 / g.length);
-          for (const i of g) { const p = new THREE.Vector3().fromBufferAttribute(pos, i).sub(gc).multiplyScalar(0.25).add(gc.multiplyScalar(1)); gc.divideScalar(1); pos.setXYZ(i, p.x * 0.9, p.y - 0.04, p.z * 0.9); }
+        for (let i = 0; i < uv.count; i++) {
+          if (!inBun(uv.getX(i), uv.getY(i)) || pos.getY(i) < headY + 0.18) continue;
+          pos.setXYZ(i, pos.getX(i) * 0.6, headY + 0.18 + (pos.getY(i) - headY - 0.18) * 0.15, pos.getZ(i) * 0.6);
         }
         pos.needsUpdate = true;
       });
