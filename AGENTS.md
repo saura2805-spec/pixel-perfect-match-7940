@@ -20,4 +20,4 @@
 - Companion measures visualViewport height on resize so mobile keyboards do not obscure the composer; compact CSS is scoped to Companion and short viewports, preserving Mentor and desktop layouts.
 - Clinical cases and learning reviews use validated browser-local records, separate from ephemeral chat history; hydrate after mounting and report storage failures, keeping this local-only app independent of Cloud.
 - Mentor case and response-style context is composed into the existing message field; preserve the Express request contract and render the user's original message in the transcript.
-- Chat avatar is a set of half-body rendered portraits (one per mood plus a wave) cross-faded in AvatarPortrait with CSS motion; Avatar3D is kept but unused, since procedural shapes could not reach the polished look.
+- Chat avatar is half-body rendered portraits (one per mood) cross-faded in AvatarPortrait, with a generated wave video clip for the greeting (skipped under reduced motion); Avatar3D is kept but unused.
