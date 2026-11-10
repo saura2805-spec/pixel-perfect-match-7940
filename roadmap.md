@@ -20,3 +20,5 @@ Integration limitation: the real local Express/Ollama service is unavailable in 
 - [x] Replace portraits with a true interactive 3D model keeping the reference look
 - [x] Face + gestures visibly express happy, sad, exhausted, thinking
 - [x] Many more moods + gestures driven by the conversation (reply emotion)
+- [ ] Context-aware mood reading (beyond keywords) + sample messages to try
+- [ ] Refine 3D hair, face, outfit, proportions toward reference
