@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { AvatarPortrait as Avatar } from "./AvatarPortrait";
+import { Avatar3D as Avatar } from "./Avatar3D";
 import { sendChat, type ChatMessage, type Emotion, type Mode } from "@/lib/dessert-api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowUpRight, Mic, Square, MessageSquarePlus } from "lucide-react";
 import { companionEmotion } from "@/lib/dessert-state";
+import { inferEmotion } from "@/lib/dessert-emotions";
 import { claimCompanionGreeting, newCompanionSession, useChatSession } from "@/hooks/use-companion-session";
 import { GREETING_TEXT } from "@/lib/dessert-greeting";
 import { WorkspaceNav } from "./WorkspaceNav";
@@ -87,7 +88,7 @@ export function ChatScreen({ mode, selectedCaseId }: { mode: Mode; selectedCaseI
       const request = mode === "mentor" ? mentorMessage(text, styleId, journal.cases.find((c) => c.id === caseId), journal.reviews) : text;
       const { reply, emotion: e } = await sendChat(mode, request, messages);
       setMessages([...next, { id: crypto.randomUUID(), role: "assistant", content: reply, emotion: e }]);
-      setEmotion(e ?? "neutral");
+      setEmotion(e ?? (inferEmotion(reply) !== "neutral" ? inferEmotion(reply) : inferEmotion(text)));
     } catch {
       setError("I can’t reach the local AI right now. Check that Express and Ollama are running, then try again.");
       setEmotion("sad");

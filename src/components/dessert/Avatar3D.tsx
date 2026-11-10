@@ -1,293 +1,157 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Emotion, Mode } from "@/lib/dessert-api";
-import { AVATAR_POSES, easePose, type AvatarPose } from "@/lib/dessert-state";
-import { greetingPose, GREETING_DURATION } from "@/lib/dessert-greeting";
-import { armJointRotation, easeGesture, gesturePose } from "@/lib/dessert-gestures";
+import { GREETING_DURATION } from "@/lib/dessert-greeting";
+import { easeRig, rigPose, waveOverlay, type RigPose } from "@/lib/dessert-expressions";
+import modelAsset from "@/assets/dessert-base.vrm.asset.json";
+import skinUrl from "@/assets/dessert-skin.webp";
 
 type Greeting = { sessionId: number; claim: (id: number) => boolean; onStart: () => void; onEnd: () => void };
+type Props = { emotion?: Emotion; mode?: Mode; size?: number; greeting?: Greeting | undefined };
 
-// Procedural 3D Dessert built with three.js (loaded only in the browser).
-// Emotion is a prop so real backend emotion metadata can drive it later.
-export function Avatar3D({ emotion = "neutral", mode = "companion", size = 280, greeting }: { emotion?: Emotion; mode?: Mode; size?: number; greeting?: Greeting | undefined }) {
+// Interactive VRM Dessert: real facial expressions + humanoid bones, drag to turn her.
+export function Avatar3D({ emotion = "neutral", mode = "companion", greeting }: Props) {
   const mount = useRef<HTMLDivElement>(null);
-  const target = useRef<AvatarPose>(AVATAR_POSES[emotion]);
-  target.current = AVATAR_POSES[emotion];
-  const welcome = useRef(greeting);
-  welcome.current = greeting;
-  const context = useRef({ emotion, mode });
-  context.current = { emotion, mode };
+  const live = useRef({ emotion, mode, greetStart: -1 });
+  const [ready, setReady] = useState(false);
+  const [waving, setWaving] = useState(false);
+  live.current.emotion = emotion; live.current.mode = mode;
+
+  const sessionId = greeting?.sessionId;
+  useEffect(() => {
+    if (!ready || !greeting || !greeting.claim(greeting.sessionId)) return;
+    greeting.onStart(); setWaving(true); live.current.greetStart = performance.now();
+    const t = window.setTimeout(() => { setWaving(false); greeting.onEnd(); }, GREETING_DURATION * 1000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, ready]);
 
   useEffect(() => {
-    let disposed = false;
-    let cleanup = () => {};
-    import("three").then((T) => {
-      if (disposed || !mount.current) return;
-      const el = mount.current;
-      const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.toneMapping = T.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-      renderer.setSize(size, size);
-      renderer.domElement.style.width = "100%";
-      renderer.domElement.style.height = "100%";
-      renderer.domElement.setAttribute("aria-hidden", "true");
+    if (import.meta.env.DEV) (window as unknown as { __dessert?: unknown }).__dessert = { setEmotion: (e: Emotion) => { live.current.emotion = e; } };
+    const el = mount.current; if (!el) return;
+    let disposed = false; let raf = 0; let cleanup = () => {};
+    (async () => {
+      const THREE = await import("three");
+      const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+      const { VRMLoaderPlugin, VRMUtils } = await import("@pixiv/three-vrm");
+      if (disposed) return;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
       el.appendChild(renderer.domElement);
-      const tokens = getComputedStyle(el);
-      const color = (name: string) => tokens.getPropertyValue(`--avatar-${name}`).trim();
-      const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-      const scene = new T.Scene();
-      const cam = new T.PerspectiveCamera(32, 1, 0.1, 50);
-      cam.position.set(0, 0, 8.1);
-      cam.lookAt(0, -0.06, 0);
-      scene.add(new T.HemisphereLight(color("light"), color("shadow"), 1.5));
-      const key = new T.DirectionalLight(color("light"), 2); key.position.set(2, 3, 4); scene.add(key);
-      const rim = new T.DirectionalLight(color("key"), 1.2); rim.position.set(-3, 1, -2); scene.add(rim);
-      const fill = new T.DirectionalLight(color("light"), 0.7); fill.position.set(-3, 0, 4); scene.add(fill);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(24, 1, 0.1, 20);
+      scene.add(new THREE.HemisphereLight(0xfff1f4, 0x553344, 1.6));
+      const key = new THREE.DirectionalLight(0xffffff, 1.8); key.position.set(1, 2, 3); scene.add(key);
+      const rim = new THREE.DirectionalLight(0xff9ad0, 1.2); rim.position.set(-2, 1.5, -2); scene.add(rim);
 
-      const mat = (c: string, r = 0.6) => new T.MeshStandardMaterial({ color: color(c), roughness: r });
-      const root = new T.Group(); scene.add(root);
-      const head = new T.Group(); head.position.y = 0.55; root.add(head);
+      const loader = new GLTFLoader(); loader.register((p) => new VRMLoaderPlugin(p));
+      const gltf = await loader.loadAsync(modelAsset.url);
+      if (disposed) return;
+      const vrm = gltf.userData["vrm"] as import("@pixiv/three-vrm").VRM;
+      VRMUtils.rotateVRM0(vrm);
+      const tex = await new THREE.TextureLoader().loadAsync(skinUrl);
+      tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace;
+      vrm.scene.traverse((o: import("three").Object3D) => {
+        const m = (o as import("three").Mesh).material as unknown as Record<string, unknown> | undefined;
+        if (!m) return; (o as import("three").Mesh).frustumCulled = false;
+        for (const mat of Array.isArray(m) ? m : [m]) {
+          if ("map" in mat) mat.map = tex;
+          if ("shadeMultiplyTexture" in mat && mat.shadeMultiplyTexture) mat.shadeMultiplyTexture = tex;
+          (mat as { needsUpdate?: boolean }).needsUpdate = true;
+        }
+      });
+      scene.add(vrm.scene);
+      const bone = (n: string) => vrm.humanoid.getNormalizedBoneNode(n as import("@pixiv/three-vrm").VRMHumanBoneName) as import("three").Object3D | null;
+      const head = bone("head")!;
 
-      // Pink gingham plaid, Peter Pan collar and flared skirt, as in the reference.
-      const fabricCanvas = document.createElement("canvas"); fabricCanvas.width = 128; fabricCanvas.height = 128;
-      const fabricContext = fabricCanvas.getContext("2d");
-      if (fabricContext) {
-        fabricContext.fillStyle = color("dress"); fabricContext.fillRect(0, 0, 128, 128);
-        fabricContext.fillStyle = color("plaid"); fabricContext.globalAlpha = 0.45;
-        fabricContext.fillRect(0, 0, 128, 40); fabricContext.fillRect(0, 0, 40, 128);
-        fabricContext.globalAlpha = 0.7; fabricContext.strokeStyle = color("plaid-line"); fabricContext.lineWidth = 2;
-        for (const v of [20, 84]) {
-          fabricContext.beginPath(); fabricContext.moveTo(v, 0); fabricContext.lineTo(v, 128); fabricContext.stroke();
-          fabricContext.beginPath(); fabricContext.moveTo(0, v); fabricContext.lineTo(128, v); fabricContext.stroke();
-        }
+      // Round dark glasses on the head bone.
+      const glasses = new THREE.Group();
+      const frame = new THREE.MeshStandardMaterial({ color: 0x1a1210, roughness: 0.4, metalness: 0.3 });
+      for (const x of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.0055, 12, 48), frame); ring.position.x = x * 0.068; glasses.add(ring); }
+      const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.02), frame); bridge.rotation.z = Math.PI / 2; glasses.add(bridge);
+      head.add(glasses);
+      const hairMat = new THREE.MeshToonMaterial({ color: getComputedStyle(el).getPropertyValue("--avatar-hair").trim() || "#2a1914" });
+      const hair = new THREE.Group();
+      for (let i = 0; i < 9; i++) {
+        const a = -1.25 + (i / 8) * 2.5; const len = 0.22 + Math.cos(a) * 0.06;
+        const pts = Array.from({ length: 7 }, (_, k) => new THREE.Vector3(Math.sin(a) * (0.13 + k * 0.006) + Math.sin(k * 1.4 + i) * 0.012, 0.1 - k * len / 6, Math.cos(a) * 0.1 + 0.02 + Math.cos(k * 1.4 + i) * 0.008));
+        const lock = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.045, 10), hairMat);
+        hair.add(lock);
       }
-      const fabric = new T.CanvasTexture(fabricCanvas); fabric.colorSpace = T.SRGBColorSpace;
-      fabric.wrapS = fabric.wrapT = T.RepeatWrapping; fabric.repeat.set(4, 3);
-      const dressMaterial = new T.MeshStandardMaterial({ color: "#ffffff", roughness: 0.9, map: fabric });
-      const skinMaterial = new T.MeshPhysicalMaterial({ color: color("skin"), roughness: 0.55, clearcoat: 0.15, clearcoatRoughness: 0.6, sheen: 0.4, sheenColor: new T.Color(color("blush")) });
-      const bodice = new T.Mesh(new T.CapsuleGeometry(0.5, 0.35, 8, 32), dressMaterial);
-      bodice.scale.z = 0.72; bodice.position.y = -0.8; root.add(bodice);
-      const skirt = new T.Mesh(new T.CylinderGeometry(0.5, 0.95, 0.85, 40, 4, true), dressMaterial);
-      const skirtPos = skirt.geometry.getAttribute("position");
-      for (let i = 0; i < skirtPos.count; i++) {
-        const x = skirtPos.getX(i), z = skirtPos.getZ(i), y = skirtPos.getY(i);
-        const pleat = 1 + Math.sin(Math.atan2(z, x) * 14) * 0.035 * (0.5 - y / 0.85);
-        skirtPos.setXYZ(i, x * pleat, y, z * pleat * 0.75);
-      }
-      skirt.geometry.computeVertexNormals(); dressMaterial.side = T.DoubleSide;
-      skirt.position.y = -1.42; root.add(skirt);
-      const neck = new T.Mesh(new T.CapsuleGeometry(0.19, 0.17, 6, 16), skinMaterial);
-      neck.position.set(0, -0.4, 0.03); root.add(neck);
-      const collarMaterial = mat("collar", 0.7);
-      for (const side of [-1, 1]) {
-        const flap = new T.Mesh(new T.SphereGeometry(0.26, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), collarMaterial);
-        flap.scale.set(1, 0.2, 0.85); flap.position.set(side * 0.17, -0.56, 0.3); flap.rotation.set(1.15, 0, side * 0.35); root.add(flap);
-      }
-      const button = new T.Mesh(new T.SphereGeometry(0.03, 12, 8), collarMaterial);
-      button.position.set(0, -0.82, 0.37); root.add(button);
-      // Jointed sleeves and hands extend the same character, without external assets.
-      const arms = new T.Group(); root.add(arms);
-      const shoulders: InstanceType<typeof T.Group>[] = [];
-      const elbows: InstanceType<typeof T.Group>[] = [];
-      const wrists: InstanceType<typeof T.Group>[] = [];
-      const fingers: InstanceType<typeof T.Group>[][] = [];
-      for (const side of [-1, 1]) {
-        const shoulder = new T.Group(); shoulder.position.set(side * 0.52, -0.6, 0.08); arms.add(shoulder);
-        const sleeve = new T.Mesh(new T.SphereGeometry(0.19, 20, 14), dressMaterial);
-        sleeve.scale.set(1, 1.15, 0.95); sleeve.position.y = -0.1; shoulder.add(sleeve);
-        const upper = new T.Mesh(new T.CapsuleGeometry(0.085, 0.16, 4, 12), skinMaterial);
-        upper.position.y = -0.24; shoulder.add(upper);
-        const elbow = new T.Group(); elbow.position.y = -0.34; shoulder.add(elbow);
-        const forearm = new T.Mesh(new T.CapsuleGeometry(0.082, 0.22, 4, 12), skinMaterial);
-        forearm.position.y = -0.13; elbow.add(forearm);
-        const wrist = new T.Group(); wrist.position.y = -0.29; elbow.add(wrist);
-        const palm = new T.Mesh(new T.SphereGeometry(0.115, 16, 12), skinMaterial);
-        palm.scale.set(0.92, 1.15, 0.48); palm.position.y = -0.075; wrist.add(palm);
-        const handFingers: InstanceType<typeof T.Group>[] = [];
-        for (let finger = 0; finger < 4; finger++) {
-          const joint = new T.Group();
-          joint.position.set((finger - 1.5) * 0.05, -0.15, 0);
-          joint.rotation.z = (finger - 1.5) * -0.09; wrist.add(joint);
-          const length = finger === 0 || finger === 3 ? 0.07 : 0.105;
-          const digit = new T.Mesh(new T.CapsuleGeometry(0.023, length, 3, 8), skinMaterial);
-          digit.position.y = -length / 2; joint.add(digit);
-          const nail = new T.Mesh(new T.SphereGeometry(0.019, 8, 6), mat("nail", 0.4));
-          nail.scale.set(0.8, 1.1, 0.18); nail.position.set(0, -length + 0.015, 0.022); joint.add(nail);
-          handFingers.push(joint);
-        }
-        const thumb = new T.Mesh(new T.CapsuleGeometry(0.032, 0.08, 3, 8), skinMaterial);
-        thumb.position.set(-side * 0.105, -0.08, 0.015); thumb.rotation.z = -side * 0.65; wrist.add(thumb);
-        shoulders.push(shoulder); elbows.push(elbow); wrists.push(wrist);
-        fingers.push(handFingers);
-      }
+      head.add(hair);
+      scene.updateMatrixWorld(true);
+      const headPos = head.getWorldPosition(new THREE.Vector3());
+      glasses.position.set(0, 0.118, -0.17);
+      Object.assign(window as object, import.meta.env.DEV ? { __dessertGlasses: glasses } : {});
 
-      const faceGeometry = new T.SphereGeometry(1, 40, 32);
-      const vertices = faceGeometry.getAttribute("position");
-      for (let i = 0; i < vertices.count; i++) {
-        const y = vertices.getY(i);
-        vertices.setX(i, vertices.getX(i) * (y < -0.2 ? 1 + (y + 0.2) * 0.16 : 1));
-      }
-      faceGeometry.computeVertexNormals(); head.add(new T.Mesh(faceGeometry, skinMaterial));
-      const nose = new T.Mesh(new T.SphereGeometry(0.085, 16, 12), skinMaterial);
-      nose.scale.set(0.65, 1.1, 0.85); nose.position.set(0, -0.14, 0.99); head.add(nose);
-      for (const side of [-1, 1]) {
-        const ear = new T.Mesh(new T.SphereGeometry(0.16, 16, 12), skinMaterial);
-        ear.scale.set(0.7, 1.2, 0.6); ear.position.set(side * 0.96, -0.08, 0.06); head.add(ear);
-      }
-      // A fitted hair shell and tapered curved locks, rather than intersecting capsules.
-      const hairM = mat("hair", 0.5);
-      const hairGeometry = new T.SphereGeometry(1.045, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.52);
-      const hairVertices = hairGeometry.getAttribute("position");
-      for (let i = 0; i < hairVertices.count; i++) {
-        const y = hairVertices.getY(i), z = hairVertices.getZ(i);
-        if (z > 0 && y < 0.78) hairVertices.setY(i, y + (0.78 - y) * z / 1.045);
-      }
-      hairGeometry.computeVertexNormals(); head.add(new T.Mesh(hairGeometry, hairM));
-      const back = new T.Mesh(new T.SphereGeometry(1, 32, 24), hairM);
-      back.scale.set(1.12, 1.5, 0.48); back.position.set(0, -0.43, -0.6); head.add(back);
-      const makeLock = (points: InstanceType<typeof T.Vector3>[], radius: number, material: InstanceType<typeof T.Material>) => {
-        const curve = new T.CatmullRomCurve3(points);
-        const geometry = new T.TubeGeometry(curve, 32, radius, 8, false);
-        const positions = geometry.getAttribute("position");
-        for (let ring = 0; ring <= 32; ring++) {
-          const u = ring / 32, center = curve.getPointAt(u);
-          const taper = 0.15 + 0.85 * Math.sin(Math.PI * (0.12 + u * 0.86));
-          for (let j = 0; j <= 8; j++) {
-            const idx = ring * 9 + j;
-            positions.setXYZ(idx, center.x + (positions.getX(idx) - center.x) * taper, center.y + (positions.getY(idx) - center.y) * taper, center.z + (positions.getZ(idx) - center.z) * taper);
-          }
-        }
-        geometry.computeVertexNormals(); head.add(new T.Mesh(geometry, material));
+      const target = new THREE.Vector3(0, headPos.y + 0.04, 0);
+      let yaw = 0, drag = false, lastX = 0;
+      const down = (e: PointerEvent) => { drag = true; lastX = e.clientX; };
+      const move = (e: PointerEvent) => { if (drag) { yaw = Math.max(-0.8, Math.min(0.8, yaw + (e.clientX - lastX) * 0.01)); lastX = e.clientX; } };
+      const up = () => { drag = false; };
+      renderer.domElement.addEventListener("pointerdown", down); window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+
+      const resize = () => { const w = el.clientWidth, h = el.clientHeight; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); };
+      const ro = new ResizeObserver(resize); ro.observe(el); resize();
+
+      let pose: RigPose = rigPose(live.current.emotion as Emotion, live.current.mode);
+      let last = performance.now(), t = 0, blinkAt = 2, first = true;
+      const setArm = (side: "left" | "right", a: RigPose["left"], wave = 0, lift = 0) => {
+        const s = side === "left" ? -1 : 1;
+        const ua = bone(side + "UpperArm"), la = bone(side + "LowerArm"), hand = bone(side + "Hand");
+        if (!ua || !la) return;
+        const mix = (v: number, w: number) => v * (1 - lift) + w * lift;
+        ua.rotation.set(mix(a.forward, 0), 0, -s * mix(a.down, 1.1));
+        la.rotation.set(0, s * mix(a.elbow, 2.5), s * (mix(a.lift, 0.9) + wave));
+        if (hand) hand.rotation.set(0, 0, s * wave * 0.5);
       };
-      const strandMaterial = mat("hair-detail", 0.55);
-      for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
-        const points = [new T.Vector3(side * (0.1 + i * 0.12), 1.04, 0.18 - i * 0.18), new T.Vector3(side * (0.68 + i * 0.1), 0.72, 0.59 - i * 0.24), new T.Vector3(side * (0.94 + i * 0.08), -0.1, 0.24 - i * 0.24), new T.Vector3(side * (0.9 + i * 0.09), -0.85, 0.15 - i * 0.2), new T.Vector3(side * (1.13 + i * 0.035), -1.48, 0.08 - i * 0.18), new T.Vector3(side * (0.97 + i * 0.035), -1.7, 0.12 - i * 0.18)];
-        makeLock(points, 0.22, hairM);
-        for (let strand = 0; strand < 3; strand++) makeLock(points.map((p) => new T.Vector3(p.x + side * (strand - 1) * 0.045, p.y, p.z + 0.19)), 0.009, strandMaterial);
-      }
-
-      const eyes: InstanceType<typeof T.Group>[] = [];
-      const cheeks: InstanceType<typeof T.Mesh>[] = [];
-      const brows: InstanceType<typeof T.Mesh>[] = [];
-      for (const x of [-1, 1]) {
-        const eye = new T.Group(); eye.position.set(x * 0.36, 0.02, 0.947); eye.rotation.y = x * 0.25;
-        const white = new T.Mesh(new T.SphereGeometry(0.2, 24, 20), mat("sclera", 0.35));
-        white.scale.set(1, 1.08, 0.45); eye.add(white);
-        const iris = new T.Mesh(new T.SphereGeometry(0.132, 24, 20), mat("iris", 0.28));
-        iris.scale.set(1, 1.14, 0.45); iris.position.z = 0.055; eye.add(iris);
-        const pupil = new T.Mesh(new T.SphereGeometry(0.084, 16, 16), mat("eye", 0.2));
-        pupil.scale.set(1, 1.1, 0.4); pupil.position.z = 0.097; eye.add(pupil);
-        const shine = new T.Mesh(new T.SphereGeometry(0.045, 12, 12), new T.MeshBasicMaterial({ color: color("shine") }));
-        shine.scale.setScalar(0.7); shine.position.set(0.03, 0.04, 0.125); eye.add(shine);
-        head.add(eye); eyes.push(eye);
-        const brow = new T.Mesh(new T.CapsuleGeometry(0.018, 0.17, 4, 8), hairM);
-        brow.position.set(x * 0.36, 0.37, 0.95); brow.rotation.z = Math.PI / 2;
-        head.add(brow); brows.push(brow);
-        const cheek = new T.Mesh(new T.SphereGeometry(0.14, 20, 12), new T.MeshBasicMaterial({ color: color("blush"), transparent: true, opacity: 0.4, depthWrite: false }));
-        cheek.scale.set(1.2, 0.65, 0.08); cheek.position.set(x * 0.55, -0.2, 0.83); cheek.rotation.y = x * 0.55; head.add(cheek); cheeks.push(cheek);
-        // Round dark-framed glasses and light freckles, as in the reference.
-        const lens = new T.Mesh(new T.TorusGeometry(0.27, 0.035, 12, 40), mat("bow", 0.35));
-        lens.position.set(x * 0.38, 0.02, 1.08); lens.rotation.y = x * 0.28; head.add(lens);
-        const temple = new T.Mesh(new T.CapsuleGeometry(0.022, 0.6, 4, 8), mat("bow", 0.35));
-        temple.rotation.x = Math.PI / 2; temple.position.set(x * 0.9, 0.06, 0.62); temple.rotation.z = x * 0.15; head.add(temple);
-        for (let f = 0; f < 4; f++) {
-          const freckle = new T.Mesh(new T.CircleGeometry(0.012, 8), mat("freckle", 0.8));
-          const fx = x * (0.14 + f * 0.075), fy = -0.18 - (f % 2) * 0.035;
-          freckle.position.set(fx, fy, Math.sqrt(1 - fx * fx - fy * fy) + 0.009); freckle.lookAt(fx * 2, fy * 2, freckle.position.z * 2); head.add(freckle);
-        }
-      }
-      const bridge = new T.Mesh(new T.CapsuleGeometry(0.018, 0.12, 4, 8), mat("bow", 0.35));
-      bridge.rotation.z = Math.PI / 2; bridge.position.set(0, 0.08, 1.15); head.add(bridge);
-      const mouth = new T.Mesh(new T.TorusGeometry(0.13, 0.025, 8, 24, Math.PI), mat("mouth"));
-      mouth.position.set(0, -0.32, 0.99); head.add(mouth);
-      const openMouth = new T.Mesh(new T.CircleGeometry(0.11, 24), mat("mouth"));
-      openMouth.position.set(0, -0.33, 0.98); head.add(openMouth);
-
-      let cur = { ...target.current };
-      let joints = gesturePose(context.current.emotion, context.current.mode, 0, true);
-      let raf = 0; const t0 = performance.now(); let previous = t0; let nextBlink = 3; let elapsed = 0;
-      let lastDraw = 0;
-      let seenSession = 0; let greetingStarted: number | null = null;
-      const loop = (now = performance.now()) => {
+      const loop = (now: number) => {
         raf = requestAnimationFrame(loop);
-        if (now - lastDraw < 1000 / 30) return;
-        lastDraw = now;
-        const delta = Math.min((now - previous) / 1000, 0.05); previous = now;
-        elapsed += delta;
-        const t = elapsed;
-        const config = welcome.current;
-        arms.visible = true;
-        if (config && seenSession !== config.sessionId) {
-          seenSession = config.sessionId;
-          greetingStarted = config.claim(config.sessionId) ? now : null;
-          if (greetingStarted !== null) config.onStart();
+        const dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt * (reduced ? 0.3 : 1);
+        pose = easeRig(pose, rigPose(live.current.emotion as Emotion, live.current.mode), dt);
+        const g = live.current.greetStart >= 0 && !reduced ? waveOverlay((now - live.current.greetStart) / 1000, GREETING_DURATION) : { weight: 0, wave: 0 };
+        const em = vrm.expressionManager;
+        if (em) {
+          const f = pose.face, gw = g.weight;
+          em.setValue("happy", Math.max(f.happy, gw)); em.setValue("sad", f.sad * (1 - gw)); em.setValue("relaxed", f.relaxed * (1 - gw));
+          em.setValue("surprised", f.surprised); em.setValue("angry", f.angry); em.setValue("lookUp", f.lookUp); em.setValue("lookDown", f.lookDown);
+          em.setValue("oh", f.oh); em.setValue("aa", f.aa + (reduced ? 0 : Math.max(0, Math.sin(t * 0.7)) * f.aa * 0.5));
+          blinkAt -= dt; let blink = f.lids;
+          if (blinkAt < 0) { blink = Math.max(blink, 1 - Math.abs(blinkAt + 0.08) / 0.08); if (blinkAt < -0.16) blinkAt = 2 + Math.random() * 3; }
+          em.setValue("blink", Math.min(1, blink));
         }
-        const seconds = greetingStarted === null ? GREETING_DURATION : (now - greetingStarted) / 1000;
-        const wave = greetingPose(seconds, motion.matches);
-        if (greetingStarted !== null && !wave.active) { greetingStarted = null; config?.onEnd(); }
-        el.dataset["greetingActive"] = String(wave.active);
-        el.dataset["waveLift"] = wave.lift.toFixed(3);
-        const p = { ...target.current };
-        const desiredJoints = gesturePose(context.current.emotion, context.current.mode, t, motion.matches);
-        for (const side of ["left", "right"] as const) {
-          const idleArm = gesturePose("neutral", context.current.mode, t, true)[side];
-          for (const k of Object.keys(idleArm) as (keyof typeof idleArm)[]) desiredJoints[side][k] += (idleArm[k] - desiredJoints[side][k]) * wave.warmth;
-        }
-        desiredJoints.right.shoulder += wave.lift * 1.65;
-        desiredJoints.right.elbow += wave.lift * 1.15;
-        desiredJoints.right.wrist += wave.wrist;
-        desiredJoints.right.curl *= 1 - wave.lift;
-        for (const k of Object.keys(p) as (keyof AvatarPose)[]) p[k] += (AVATAR_POSES.happy[k] - p[k]) * wave.warmth;
-        const settledHands = (["left", "right"] as const).every((side) => Object.keys(desiredJoints[side]).every((k) => Math.abs(joints[side][k as keyof typeof joints.left] - desiredJoints[side][k as keyof typeof joints.left]) < 0.001));
-        if (motion.matches && !wave.active && settledHands && el.dataset["sceneReady"] && Object.keys(p).every((k) => Math.abs(cur[k as keyof AvatarPose] - p[k as keyof AvatarPose]) < 0.001)) return;
-        cur = motion.matches ? { ...p } : easePose(cur, p, delta);
-        joints = motion.matches ? desiredJoints : easeGesture(joints, desiredJoints, delta);
-        const idle = motion.matches ? 0 : 1;
-        root.position.y = idle * Math.sin(t * (1.4 + cur.open)) * cur.float;
-        root.scale.setScalar(1 + idle * Math.sin(t * 1.4) * 0.008);
-        root.rotation.y = wave.turn;
-        const hands = [joints.left, joints.right];
-        const rotations = hands.map((hand, i) => armJointRotation(hand, i === 0 ? -1 : 1));
-        shoulders.forEach((shoulder, i) => { const joint = rotations[i]; if (joint) shoulder.rotation.set(joint.forward, 0, joint.shoulder); });
-        elbows.forEach((elbow, i) => { const joint = rotations[i]; if (joint) elbow.rotation.set(joint.elbowForward, 0, joint.elbowSide); });
-        wrists.forEach((wrist, i) => { const hand = hands[i]; if (hand) wrist.rotation.set(0, hand.palm, hand.wrist); });
-        fingers.forEach((handFingers, i) => { const joint = rotations[i]; if (joint) handFingers.forEach((finger) => { finger.rotation.x = joint.curl; }); });
-        el.dataset["gestureMode"] = context.current.mode;
-        el.dataset["handPose"] = context.current.emotion;
-        head.rotation.z = cur.tilt + idle * Math.sin(t * 0.7) * 0.025;
-        head.rotation.y = cur.gaze + idle * Math.sin(t * 0.5) * 0.06;
-        head.rotation.x = cur.nod + idle * Math.sin(t * 1.3) * Math.abs(cur.nod) * 0.5;
-        let blink = 1;
-        if (!motion.matches && t > nextBlink) { const d = t - nextBlink; blink = d < 0.22 ? Math.abs(1 - d / 0.11) : 1; if (d > 0.22) nextBlink = t + 3 + Math.random() * 4; }
-        eyes.forEach((e) => e.scale.set(1, Math.max(0.05, cur.eye * blink), 1));
-        brows.forEach((b, i) => { b.rotation.z = Math.PI / 2 + (i === 0 ? -1 : 1) * cur.brow; b.position.y = 0.37 + Math.abs(cur.brow) * 0.1; });
-        const s = cur.smile;
-        mouth.rotation.z = s >= 0 ? Math.PI : 0;
-        mouth.scale.set(0.6 + Math.abs(s) * 0.6, 0.3 + Math.abs(s) * 0.9, 1);
-        mouth.position.y = s >= 0 ? -0.28 : -0.4;
-        mouth.visible = true;
-        openMouth.scale.set(1, Math.max(0.01, cur.open * 1.25), 1);
-        openMouth.visible = cur.open > 0.1;
-        cheeks.forEach((c) => ((c.material as InstanceType<typeof T.MeshBasicMaterial>).opacity = cur.blush * 0.6));
-        renderer.render(scene, cam);
-        el.dataset["sceneReady"] = "true";
+        const breathe = reduced ? 0 : Math.sin(t * 1.6 * pose.motion.speed);
+        const spine = bone("spine"), chest = bone("chest") ?? bone("upperChest");
+        if (spine) spine.rotation.x = -pose.spine + breathe * 0.012 * pose.motion.bounce;
+        if (chest) chest.rotation.x = breathe * 0.01;
+        const neck = bone("neck");
+        const mo = pose.motion, r = reduced ? 0 : 1;
+        head.rotation.set(-pose.headPitch - r * Math.sin(t * 3 * mo.speed) * mo.nod - r * Math.sin(t * 0.9) * 0.02, pose.headYaw + r * Math.sin(t * 0.5) * 0.06 + r * Math.sin(t * 9) * mo.shake - g.weight * 0.15, pose.headRoll + r * Math.sin(t * 0.7 * mo.speed) * mo.sway + g.weight * 0.1);
+        if (neck) neck.rotation.x = -pose.headPitch * 0.3;
+        vrm.scene.position.y = reduced ? 0 : Math.abs(Math.sin(t * 2 * pose.motion.speed)) * 0.006 * pose.motion.bounce;
+        vrm.scene.rotation.y = yaw + Math.PI;
+        setArm("left", pose.left);
+        setArm("right", pose.right, g.wave, g.weight);
+        vrm.update(dt);
+        camera.position.set(0, target.y + 0.01, 1.75); camera.lookAt(target);
+        renderer.render(scene, camera);
+        if (first) { first = false; setReady(true); }
       };
-      loop();
+      raf = requestAnimationFrame(loop);
       cleanup = () => {
-        cancelAnimationFrame(raf);
-        const materials = new Set<InstanceType<typeof T.Material>>();
-        scene.traverse((object) => {
-          if (object instanceof T.Mesh) { object.geometry.dispose(); (Array.isArray(object.material) ? object.material : [object.material]).forEach((m) => materials.add(m)); }
-        });
-        fabric.dispose(); materials.forEach((m) => m.dispose()); renderer.dispose(); renderer.domElement.remove();
+        cancelAnimationFrame(raf); ro.disconnect();
+        renderer.domElement.removeEventListener("pointerdown", down); window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up);
+        VRMUtils.deepDispose(vrm.scene); tex.dispose(); renderer.dispose(); renderer.domElement.remove();
       };
-    }).catch(() => { if (mount.current) mount.current.dataset["sceneError"] = "true"; });
+    })();
     return () => { disposed = true; cleanup(); };
-  }, [size]);
+  }, []);
 
   return (
-    <div className="dessert-avatar relative shrink-0" role="img" aria-label={`Dessert, feeling ${emotion}`}>
-      <div ref={mount} className="h-full w-full" />
+    <div className="dessert-avatar dessert-portrait relative shrink-0" data-emotion={emotion} data-mode={mode} data-greeting-active={String(waving)} data-scene-ready={ready ? "true" : undefined} role="img" aria-label={`Dessert, feeling ${emotion}. Drag to turn her.`}>
+      <div className="dessert-portrait-glow" aria-hidden="true" />
+      <div ref={mount} className="absolute inset-0 cursor-grab touch-pan-y" />
     </div>
   );
 }

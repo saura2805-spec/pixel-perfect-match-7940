@@ -16,3 +16,7 @@
 - [x] Run behavior tests and summarize remaining local integration work.
 
 Integration limitation: the real local Express/Ollama service is unavailable in this preview. Controlled API replies verified the UI contract, not live AI. Real microphone input and device performance remain device-only checks.
+## 3D Dessert
+- [x] Replace portraits with a true interactive 3D model keeping the reference look
+- [x] Face + gestures visibly express happy, sad, exhausted, thinking
+- [x] Many more moods + gestures driven by the conversation (reply emotion)
