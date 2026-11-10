@@ -19,3 +19,4 @@ Integration limitation: the real local Express/Ollama service is unavailable in 
 ## 3D Dessert
 - [ ] Replace portraits with a true interactive 3D model keeping the reference look
 - [ ] Face + gestures visibly express happy, sad, exhausted, thinking
+- [ ] Many more moods + gestures driven by the conversation (reply emotion)
