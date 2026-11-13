@@ -76,9 +76,11 @@ export function ChatScreen({ mode, selectedCaseId }: { mode: Mode; selectedCaseI
   useEffect(() => { composerRef.current?.focus({ preventScroll: true }); }, [mode]);
 
   const [intensity, setIntensity] = useState(1);
-  const liveEmotion = companionEmotion(input, listening, loading, emotion);
-  const displayEmotion = liveEmotion;
-  const displayIntensity = intensity;
+  const displayEmotion = companionEmotion(input, listening, loading, emotion);
+  const greeting = useMemo(() => mode === "companion" ? {
+    sessionId: session.id, claim: claimCompanionGreeting,
+    onStart: () => setGreetingVisible(true), onEnd: () => setGreetingVisible(false),
+  } : undefined, [mode, session.id]);
 
   async function send() {
     const text = input.trim();
