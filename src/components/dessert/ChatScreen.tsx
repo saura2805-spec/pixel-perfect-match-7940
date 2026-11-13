@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Avatar3D as Avatar } from "./Avatar3D";
 import { sendChat, type ChatMessage, type Emotion, type Mode } from "@/lib/dessert-api";
 import { cn } from "@/lib/utils";
@@ -120,29 +120,21 @@ export function ChatScreen({ mode, selectedCaseId }: { mode: Mode; selectedCaseI
       <aside className="dessert-profile glass flex min-w-0 flex-col items-center rounded-3xl p-3 sm:p-4 lg:p-6">
         <WorkspaceNav />
         <div className="dessert-identity grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center justify-center gap-2 lg:flex lg:flex-1 lg:flex-col lg:gap-0 lg:py-6">
-          <Avatar emotion={displayEmotion} intensity={displayIntensity} mode={mode} size={260} greeting={mode === "companion" ? {
-            sessionId: session.id, claim: claimCompanionGreeting,
-            onStart: () => setGreetingVisible(true), onEnd: () => setGreetingVisible(false),
-          } : undefined} />
+          <Avatar emotion={displayEmotion} intensity={intensity} mode={mode} size={260} greeting={greeting} />
           <div className="min-w-0 lg:text-center">
             <h1 className="font-display text-3xl italic lg:mt-4 lg:text-4xl">Dessert</h1>
             <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground sm:text-sm lg:justify-center">
               <span className={cn("h-2 w-2 shrink-0 rounded-full", error ? "bg-destructive" : "bg-online")} />
               {error ? "Connection unavailable" : loading ? "Thinking…" : listening ? "Listening…" : "Here with you"}
             </div>
-            <span className="mt-3 inline-block rounded-full border border-primary/30 px-3 py-1 text-[10px] uppercase tracking-widest text-primary">{displayEmotion}</span>
             {mode === "companion" && greetingVisible && <p role="status" className="mt-3 max-w-64 text-sm leading-relaxed text-primary animate-rise">{GREETING_TEXT}</p>}
           </div>
         </div>
-        <p className="hidden text-center text-xs text-muted-foreground lg:block">Local AI · just you and Dessert</p>
       </aside>
 
       <section className="dessert-conversation glass flex min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl">
         <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
-          <div className="min-w-0">
-          <h2 className="font-display text-xl">{c.title}</h2>
-          <p className="text-xs text-muted-foreground">{mode === "companion" ? `Chatting with ${NICK}` : "Cases · reviews · memory"}</p>
-          </div>
+          <h2 className="min-w-0 font-display text-xl">{c.title}</h2>
           {mode === "companion" && <Button variant="ghost" size="icon" title="New chat" aria-label="New chat" disabled={loading} onClick={() => {
             recRef.current?.stop(); setListening(false); setError(null); setGreetingVisible(false); newCompanionSession();
           }}><MessageSquarePlus /></Button>}
@@ -169,9 +161,9 @@ export function ChatScreen({ mode, selectedCaseId }: { mode: Mode; selectedCaseI
             </div>
           ))}
           {loading && (
-            <div className="flex items-center gap-3 animate-rise"><div className="flex h-11 items-center gap-1.5 rounded-3xl rounded-bl-md border bg-bubble-ai px-5" role="status" aria-label="Dessert is thinking">
+            <div className="flex animate-rise"><div className="flex h-11 items-center gap-1.5 rounded-3xl rounded-bl-md border bg-bubble-ai px-5" role="status" aria-label="Dessert is thinking">
               {[0, 1, 2].map((i) => <span key={i} className="h-2 w-2 rounded-full bg-primary animate-dot" style={{ animationDelay: `${i * 0.15}s` }} />)}
-            </div><span className="text-xs text-muted-foreground">Thinking…</span></div>
+            </div></div>
           )}
           {error && <p className="text-center text-sm text-destructive animate-rise">{error}</p>}
         </div>
