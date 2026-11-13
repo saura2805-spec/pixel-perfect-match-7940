@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { Emotion, Mode } from "@/lib/dessert-api";
 import { GREETING_DURATION } from "@/lib/dessert-greeting";
 import { easeRig, rigPose, waveOverlay, type RigPose } from "@/lib/dessert-expressions";
@@ -9,7 +9,8 @@ type Greeting = { sessionId: number; claim: (id: number) => boolean; onStart: ()
 type Props = { intensity?: number; emotion?: Emotion; mode?: Mode; size?: number; greeting?: Greeting | undefined };
 
 // Interactive VRM Dessert: real facial expressions + humanoid bones, drag to turn her.
-export function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion", greeting }: Props) {
+// Memoized: the render loop reads props from a ref, so parent re-renders (e.g. typing) skip this component.
+export const Avatar3D = memo(function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion", greeting }: Props) {
   const mount = useRef<HTMLDivElement>(null);
   const live = useRef({ emotion, mode, intensity, greetStart: -1 });
   const [ready, setReady] = useState(false);
@@ -173,4 +174,4 @@ export function Avatar3D({ intensity = 1, emotion = "neutral", mode = "companion
       <div ref={mount} className="absolute inset-0 cursor-grab touch-pan-y" />
     </div>
   );
-}
+});
