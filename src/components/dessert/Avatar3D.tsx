@@ -174,4 +174,4 @@ export const Avatar3D = memo(function Avatar3D({ intensity = 1, emotion = "neutr
       <div ref={mount} className="absolute inset-0 cursor-grab touch-pan-y" />
     </div>
   );
-}
+});
